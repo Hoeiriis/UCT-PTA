@@ -1,6 +1,8 @@
 #include <iostream>
 #include <omp.h>
-#include <MCTS/TicTacToeEnvironment.h>
+#include "TicTacToeEnvironment.h"
+#include "SearchNode.h"
+#include "UCT.h"
 
 int main()
 {
