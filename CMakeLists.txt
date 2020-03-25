@@ -3,7 +3,7 @@ project(example_exec VERSION 0.0.1 LANGUAGES CXX)
 
 add_executable(example_exec)
 target_sources(example_exec PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
-#target_compile_features(example_exec PRIVATE cxx_std_17)
+target_compile_features(example_exec PRIVATE cxx_std_17)
 
 find_package(MCTS REQUIRED)
 if(MCTS_FOUND)
