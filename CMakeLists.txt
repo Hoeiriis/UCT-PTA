@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.12...3.13)
-project(UCT_PTA VERSION 0.0.1 LANGUAGES CXX)
+project(UCT_PTA 
+        VERSION 0.0.1 
+        LANGUAGES "CXX")
 
 set( CMAKE_POSITION_INDEPENDENT_CODE ON )
 ############################################
@@ -35,15 +37,21 @@ else()
     message(STATUS "MCTS NOT FOUND")
 endif()
 
-
+#### LIBRARY TARGETS ####
 add_library(UCT_PTA)
 add_subdirectory(src/Environments)
 add_subdirectory(src/Core)
 
+add_library(UCT_PTA::Environments ALIAS Environments)
+add_library(UCT_PTA::Core ALIAS Core)
+
 target_link_libraries(UCT_PTA
     PUBLIC
-        environments_objLib
-        common_objLib)
+        UCT_PTA::Environments
+        UCT_PTA::Core
+        #environments_objLib
+        #common_objLib
+        )
 
 target_compile_features(UCT_PTA PRIVATE cxx_auto_type)
 target_compile_options(UCT_PTA PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>)
@@ -55,7 +63,9 @@ include(GNUInstallDirs)
 install(
     TARGETS
         UCT_PTA
+        Environments
         environments_objLib
+        Core
         common_objLib
         defaultpolicy_objLib
         EXPORT UCT_PTATargets

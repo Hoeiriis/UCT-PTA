@@ -15,6 +15,13 @@ target_include_directories(environments_objLib
         $<INSTALL_INTERFACE:include>)
 
 
-target_link_libraries(environments_objLib
+target_compile_features(environments_objLib
+    PUBLIC
+        cxx_std_17)
+
+add_library(Environments STATIC)
+target_link_libraries(Environments
+    PUBLIC
+        environments_objLib
     PRIVATE
         MCTS::MCTS)
