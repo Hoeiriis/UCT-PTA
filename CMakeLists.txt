@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.12...3.13)
 project(UCT_PTA VERSION 0.0.1 LANGUAGES CXX)
 
+set( CMAKE_POSITION_INDEPENDENT_CODE ON )
 ############################################
 # Cmake commands only enabled when developing 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -76,9 +77,10 @@ write_basic_package_version_file(
 
 configure_file(
     ${CMAKE_CURRENT_LIST_DIR}/cmake/UCT_PTATargets.cmake.in
-    UCT_PTAConfig.cmake @ONLY)
-install(
-    FILES
+    UCT_PTAConfig.cmake
+    @ONLY)
+
+install(FILES
         ${CMAKE_CURRENT_BINARY_DIR}/UCT_PTAConfig.cmake
         ${CMAKE_CURRENT_BINARY_DIR}/UCT_PTAConfigVersion.cmake
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/UCT_PTA
