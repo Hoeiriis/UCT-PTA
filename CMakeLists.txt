@@ -51,6 +51,7 @@ target_compile_options(UCT_PTA PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>)
 ##########################################################
 # Installation
 
+include(GNUInstallDirs)
 install(
     TARGETS
         UCT_PTA
