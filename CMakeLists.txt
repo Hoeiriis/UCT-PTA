@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12...3.13)
-project(UCT-PTA VERSION 0.0.1 LANGUAGES CXX)
+project(UCT_PTA VERSION 0.0.1 LANGUAGES CXX)
 
 ############################################
 # Cmake commands only enabled when developing 
@@ -35,59 +35,59 @@ else()
 endif()
 
 
-add_library(UCT-PTA)
+add_library(UCT_PTA)
 add_subdirectory(src/Environments)
 add_subdirectory(src/Core)
 
-target_link_libraries(UCT-PTA
+target_link_libraries(UCT_PTA
     PUBLIC
         environments_objLib
         common_objLib)
 
-target_compile_features(UCT-PTA PRIVATE cxx_auto_type)
-target_compile_options(UCT-PTA PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>)
+target_compile_features(UCT_PTA PRIVATE cxx_auto_type)
+target_compile_options(UCT_PTA PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>)
         
 ##########################################################
 # Installation
 
 install(
     TARGETS
-        UCT-PTA
+        UCT_PTA
         environments_objLib
         common_objLib
         defaultpolicy_objLib
-        EXPORT UCT-PTATargets
+        EXPORT UCT_PTATargets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-install(EXPORT UCT-PTATargets
-    FILE UCT-PTATargets.cmake
-    NAMESPACE UCT-PTA::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/UCT-PTA)
+install(EXPORT UCT_PTATargets
+    FILE UCT_PTATargets.cmake
+    NAMESPACE UCT_PTA::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/UCT_PTA)
 
 #Create a ConfigVersion.cmake file for helping to find version
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/UCT-PTAConfigVersion.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/UCT_PTAConfigVersion.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY AnyNewerVersion
 )
 
 configure_file(
-    ${CMAKE_CURRENT_LIST_DIR}/cmake/UCT-PTATargets.cmake
-    UCT-PTAConfig.cmake @ONLY)
+    ${CMAKE_CURRENT_LIST_DIR}/cmake/UCT_PTATargets.cmake
+    UCT_PTAConfig.cmake @ONLY)
 install(
     FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/UCT-PTAConfig.cmake
-        ${CMAKE_CURRENT_BINARY_DIR}/UCT-PTAConfigVersion.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/UCT_PTAConfig.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/UCT_PTAConfigVersion.cmake
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/MCTS
 )
 
 #################################################
 # Exporting package to be found with find_package() by other CMake projects 
-export(EXPORT UCT-PTATargets
-      NAMESPACE UCT-PTA::
-      FILE ${CMAKE_CURRENT_BINARY_DIR}/UCT-PTATargets.cmake)
+export(EXPORT UCT_PTATargets
+      NAMESPACE UCT_PTA::
+      FILE ${CMAKE_CURRENT_BINARY_DIR}/UCT_PTATargets.cmake)
 set(CMAKE_EXPORT_PACKAGE_REGISTRY ON)
-export(PACKAGE UCT-PTA)
+export(PACKAGE UCT_PTA)

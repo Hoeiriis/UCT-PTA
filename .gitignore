@@ -222,9 +222,9 @@ cmake_install.cmake
 Makefile
 build/
 .ccls-cache/
-UCT-PTAConfig.cmake
-UCT-PTAConfigVersion.cmake
-UCT-PTATargets.cmake
+UCT_PTAConfig.cmake
+UCT_PTAConfigVersion.cmake
+UCT_PTATargets.cmake
 
 #Fetchcontent dep folder
 _deps/
