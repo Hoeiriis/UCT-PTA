@@ -1,21 +1,93 @@
-cmake_minimum_required(VERSION 3.5)
-project(example_exec VERSION 0.0.1 LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.12...3.13)
+project(UCT-PTA VERSION 0.0.1 LANGUAGES CXX)
 
-add_executable(example_exec)
-target_sources(example_exec PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
-target_compile_features(example_exec PRIVATE cxx_std_17)
+############################################
+# Cmake commands only enabled when developing 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
+  message("Setting local variables")
+  set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+  set(OUTPUT_DIR "${PROJECT_SOURCE_DIR}/build")
+  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${OUTPUT_DIR}/lib)
+  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_DIR}/lib)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_DIR}/bin)
+  set(EXTERNAL_INSTALL_LOCATION "${PROJECT_ROOT}/ExternalLibs")
+  set(PREFIX_LOCATION "${PROJECT_ROOT}/.prefixes")
+
+  message(STATUS "Prefix=${PREFIX_LOCATION}")
+endif()
+
+#############################################
+# MACROS
+macro(Set_Multiple_PUBLIC_HEADER TARGET)
+  set_target_properties(${TARGET} PROPERTIES PUBLIC_HEADER "${current_public_headers};${ARGN}")  
+endmacro()
+
+#### DEPENDENCIES ####
 find_package(MCTS REQUIRED)
 if(MCTS_FOUND)
-    target_link_libraries(example_exec MCTS::MCTS)
+    set_target_properties(
+        MCTS::Environments
+        MCTS::Core
+        PROPERTIES IMPORTED_GLOBAL TRUE)
 else()
     message(STATUS "MCTS NOT FOUND")
 endif()
 
-find_package(OpenMP)
-if(OpenMP_CXX_FOUND)
-    target_link_libraries(example_exec OpenMP::OpenMP_CXX)
-else()
-    message(STATUS "lort")
-endif()
 
+add_library(UCT-PTA)
+add_subdirectory(src/Environments)
+add_subdirectory(src/Core)
+
+target_link_libraries(UCT-PTA
+    PUBLIC
+        environments_objLib
+        common_objLib)
+
+target_compile_features(UCT-PTA PRIVATE cxx_auto_type)
+target_compile_options(UCT-PTA PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>)
+        
+##########################################################
+# Installation
+
+install(
+    TARGETS
+        UCT-PTA
+        environments_objLib
+        common_objLib
+        defaultpolicy_objLib
+        EXPORT UCT-PTATargets
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+install(EXPORT UCT-PTATargets
+    FILE UCT-PTATargets.cmake
+    NAMESPACE UCT-PTA::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/UCT-PTA)
+
+#Create a ConfigVersion.cmake file for helping to find version
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/UCT-PTAConfigVersion.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY AnyNewerVersion
+)
+
+configure_file(
+    ${CMAKE_CURRENT_LIST_DIR}/cmake/UCT-PTATargets.cmake
+    UCT-PTAConfig.cmake @ONLY)
+install(
+    FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/UCT-PTAConfig.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/UCT-PTAConfigVersion.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/MCTS
+)
+
+#################################################
+# Exporting package to be found with find_package() by other CMake projects 
+export(EXPORT UCT-PTATargets
+      NAMESPACE UCT-PTA::
+      FILE ${CMAKE_CURRENT_BINARY_DIR}/UCT-PTATargets.cmake)
+set(CMAKE_EXPORT_PACKAGE_REGISTRY ON)
+export(PACKAGE UCT-PTA)

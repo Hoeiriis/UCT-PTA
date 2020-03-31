@@ -5,7 +5,7 @@
 #include <cfloat>
 #include <cassert>
 #include <cmath>
-#include "UCT.h"
+#include <UCT.h>
 
 UCT::UCT(EnvironmentInterface &environment)
 : _environment(environment), generator(std::mt19937(time(nullptr))), _defaultPolicy(UPPAAL_RandomSamplingDefaultPolicy(_environment)), root_node(SearchNode::create_SearchNode(nullptr, false)) {
