@@ -81,7 +81,7 @@ install(
     FILES
         ${CMAKE_CURRENT_BINARY_DIR}/UCT_PTAConfig.cmake
         ${CMAKE_CURRENT_BINARY_DIR}/UCT_PTAConfigVersion.cmake
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/MCTS
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/UCT_PTA
 )
 
 #################################################
