@@ -75,7 +75,7 @@ write_basic_package_version_file(
 )
 
 configure_file(
-    ${CMAKE_CURRENT_LIST_DIR}/cmake/UCT_PTATargets.cmake
+    ${CMAKE_CURRENT_LIST_DIR}/cmake/UCT_PTATargets.cmake.in
     UCT_PTAConfig.cmake @ONLY)
 install(
     FILES
