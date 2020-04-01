@@ -3,6 +3,10 @@ project(UCT_PTA
         VERSION 0.0.1 
         LANGUAGES "CXX")
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_VERBOSE_MAKEFILE ON)
+
+
 set( CMAKE_POSITION_INDEPENDENT_CODE ON )
 ############################################
 # Cmake commands only enabled when developing 
