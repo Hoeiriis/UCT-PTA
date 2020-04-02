@@ -225,6 +225,7 @@ build/
 UCT_PTAConfig.cmake
 UCT_PTAConfigVersion.cmake
 UCT_PTATargets.cmake
+install_manifest.txt
 
 #Fetchcontent dep folder
 _deps/

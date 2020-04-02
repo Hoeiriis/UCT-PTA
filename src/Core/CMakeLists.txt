@@ -15,7 +15,10 @@ target_include_directories(common_objLib
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(common_objLib PUBLIC environments_objLib)
+target_link_libraries(common_objLib 
+    PUBLIC
+        environments_objLib
+        defaultpolicy_objLib)
 
 add_subdirectory(defaultPolicy)
 
