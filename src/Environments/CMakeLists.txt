@@ -19,8 +19,8 @@ target_compile_features(environments_objLib
     PUBLIC
         cxx_std_17)
 
-add_library(Environments STATIC)
-target_link_libraries(Environments
+add_library(Environments_uctpta STATIC)
+target_link_libraries(Environments_uctpta
     PUBLIC
         environments_objLib
     PRIVATE

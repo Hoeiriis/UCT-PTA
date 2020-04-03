@@ -13,7 +13,7 @@ target_include_directories(common_objLib
       $<INSTALL_INTERFACE:include>
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR})
+      ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 target_link_libraries(common_objLib 
     PUBLIC
@@ -22,8 +22,8 @@ target_link_libraries(common_objLib
 
 add_subdirectory(defaultPolicy)
 
-add_library(Core STATIC)
-target_link_libraries(Core
+add_library(Core_uctpta STATIC)
+target_link_libraries(Core_uctpta
     PUBLIC
         common_objLib
         defaultpolicy_objLib

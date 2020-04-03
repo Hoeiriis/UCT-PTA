@@ -46,8 +46,8 @@ add_library(UCT_PTA)
 add_subdirectory(src/Environments)
 add_subdirectory(src/Core)
 
-add_library(UCT_PTA::Environments ALIAS Environments)
-add_library(UCT_PTA::Core ALIAS Core)
+add_library(UCT_PTA::Environments ALIAS Environments_uctpta)
+add_library(UCT_PTA::Core ALIAS Core_uctpta)
 
 target_link_libraries(UCT_PTA
     PUBLIC
@@ -67,9 +67,9 @@ include(GNUInstallDirs)
 install(
     TARGETS
         UCT_PTA
-        Environments
+        Environments_uctpta
         environments_objLib
-        Core
+        Core_uctpta
         common_objLib
         defaultpolicy_objLib
         EXPORT UCT_PTATargets
