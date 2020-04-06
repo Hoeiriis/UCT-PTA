@@ -1,4 +1,4 @@
-add_library(defaultpolicy_objLib)
+add_library(defaultpolicy_objLib OBJECT)
 target_sources(defaultpolicy_objLib
     PRIVATE
         UPPAAL_RandomSamplingDefaultPolicy.cpp
