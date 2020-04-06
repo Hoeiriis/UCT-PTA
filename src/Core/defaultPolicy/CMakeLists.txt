@@ -1,10 +1,5 @@
-<<<<<<< HEAD
-add_library(defaultpolicy_objLib OBJECT)
-target_sources(defaultpolicy_objLib
-=======
-add_library(defaultpolicy_uctpta_objLib)
+add_library(defaultpolicy_uctpta_objLib OBJECT)
 target_sources(defaultpolicy_uctpta_objLib
->>>>>>> external_add
     PRIVATE
         UPPAAL_RandomSamplingDefaultPolicy.cpp
     PUBLIC
