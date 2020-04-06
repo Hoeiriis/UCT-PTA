@@ -14,7 +14,7 @@
 
 #include <EnvironmentInterface.h>
 #include <SearchNode.h>
-#include "UCT.h"
+#include "UCT_PTA.h"
 
 class MCTSEntry {
 
