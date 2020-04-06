@@ -95,7 +95,7 @@ target_compile_options(UCT_PTA PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>)
 include(GNUInstallDirs)
 install(
     TARGETS
-        UCST_PTA
+        UCT_PTA
         Environments_uctpta
         environments_uctpta_objLib
         Core_uctpta
