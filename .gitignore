@@ -216,7 +216,16 @@ compile_commands.json
 *.iws
 # CMake
 cmake-build-*/
+CMakeCache.txt
 CMakeFiles/
+cmake_install.cmake
+Makefile
+build/
+.ccls-cache/
+UCT_PTAConfig.cmake
+UCT_PTAConfigVersion.cmake
+UCT_PTATargets.cmake
+install_manifest.txt
 
 #Fetchcontent dep folder
 _deps/
