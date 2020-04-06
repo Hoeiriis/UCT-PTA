@@ -31,30 +31,6 @@ macro(Set_Multiple_PUBLIC_HEADER TARGET)
 endmacro()
 
 #### DEPENDENCIES ####
-# include(FetchContent)
-# FetchContent_Declare(
-#   MCTS
-#   GIT_REPOSITORY https://github.com/Hoeiriis/MCTS.git
-#   GIT_TAG        origin/master
-# )
-# FetchContent_MakeAvailable(MCTS)
-
-include(ExternalProject)
-set(EXTERNAL_INSTALL_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/external)
-
-ExternalProject_add(MCTS
-        GIT_REPOSITORY https://github.com/Hoeiriis/MCTS.git
-        GIT_TAG master
-        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release
-        )
-
-        
-#install(TARGETS ./MCTS-prefix DESTINATION "/")
-externalProject_Add_StepTargets(MCTS install)
-# we can now include external libraries
-include_directories(${EXTERNAL_INSTALL_LOCATION}/include)
-link_directories(${EXTERNAL_INSTALL_LOCATION}/lib)
-
 find_package(MCTS REQUIRED)
 if(MCTS_FOUND)
     set_target_properties(
