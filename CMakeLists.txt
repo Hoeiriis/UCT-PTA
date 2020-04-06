@@ -81,8 +81,8 @@ target_link_libraries(UCT_PTA
         UCT_PTA::Core
     PRIVATE
         MCTS::MCTS
-        environments_uctpta_objLib
-        common_uctpta_objLib
+        #environments_uctpta_objLib
+        #common_uctpta_objLib
         )
 
 
