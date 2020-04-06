@@ -2,7 +2,7 @@
  *  Copyright Peter G. Jensen, all rights reserved.
  */
 #include <MCTSEntry.h>
-#include <UCT.h>
+#include <UCT_PTA.h>
 #include <queue>
 #include <stack>
 
@@ -13,7 +13,7 @@ MCTSEntry::MCTSEntry(EnvironmentInterface& env) : _environment(env)
 
 bool MCTSEntry::run()
 {
-    UCT uct = UCT(_environment);
+    UCT_PTA uct = UCT_PTA(_environment);
 
     uct.run(time_limit_sec);
 

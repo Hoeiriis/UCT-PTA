@@ -22,9 +22,9 @@ class TerminalNodeScore {
         long time_to_find;
 };
 
-class UCT : public MCTSInterface {
+class UCT_PTA : public MCTSInterface {
     public:
-        explicit UCT(EnvironmentInterface &environment);
+        explicit UCT_PTA(EnvironmentInterface &environment);
         State run(int n_searches) override;
         inline EnvironmentInterface &getEnvironment() override { return _environment; }
         inline std::vector<TerminalNodeScore> &getBestTerminalNodeScore() { return bestTerminalNodesFound; }

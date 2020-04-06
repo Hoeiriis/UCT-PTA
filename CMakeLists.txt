@@ -31,15 +31,41 @@ macro(Set_Multiple_PUBLIC_HEADER TARGET)
 endmacro()
 
 #### DEPENDENCIES ####
+# include(FetchContent)
+# FetchContent_Declare(
+#   MCTS
+#   GIT_REPOSITORY https://github.com/Hoeiriis/MCTS.git
+#   GIT_TAG        origin/master
+# )
+# FetchContent_MakeAvailable(MCTS)
+
+include(ExternalProject)
+set(EXTERNAL_INSTALL_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/external)
+
+ExternalProject_add(MCTS
+        GIT_REPOSITORY https://github.com/Hoeiriis/MCTS.git
+        GIT_TAG master
+        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release
+        )
+
+        
+#install(TARGETS ./MCTS-prefix DESTINATION "/")
+externalProject_Add_StepTargets(MCTS install)
+# we can now include external libraries
+include_directories(${EXTERNAL_INSTALL_LOCATION}/include)
+link_directories(${EXTERNAL_INSTALL_LOCATION}/lib)
+
 find_package(MCTS REQUIRED)
 if(MCTS_FOUND)
     set_target_properties(
         MCTS::Environments
         MCTS::Core
-        PROPERTIES IMPORTED_GLOBAL TRUE)
+        PROPERTIES ENABLE_EXPORTS TRUE
+                   IMPORTED_GLOBAL TRUE)
 else()
     message(STATUS "MCTS NOT FOUND")
 endif()
+
 
 #### LIBRARY TARGETS ####
 add_library(UCT_PTA)
@@ -53,9 +79,12 @@ target_link_libraries(UCT_PTA
     PUBLIC
         UCT_PTA::Environments
         UCT_PTA::Core
-        #environments_objLib
-        #common_objLib
+    PRIVATE
+        MCTS::MCTS
+        environments_uctpta_objLib
+        common_uctpta_objLib
         )
+
 
 target_compile_features(UCT_PTA PRIVATE cxx_auto_type)
 target_compile_options(UCT_PTA PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>)
@@ -66,12 +95,12 @@ target_compile_options(UCT_PTA PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>)
 include(GNUInstallDirs)
 install(
     TARGETS
-        UCT_PTA
+        UCST_PTA
         Environments_uctpta
-        environments_objLib
+        environments_uctpta_objLib
         Core_uctpta
-        common_objLib
-        defaultpolicy_objLib
+        common_uctpta_objLib
+        defaultpolicy_uctpta_objLib
         EXPORT UCT_PTATargets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
