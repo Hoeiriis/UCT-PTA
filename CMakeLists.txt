@@ -36,10 +36,12 @@ if(MCTS_FOUND)
     set_target_properties(
         MCTS::Environments
         MCTS::Core
-        PROPERTIES IMPORTED_GLOBAL TRUE)
+        PROPERTIES ENABLE_EXPORTS TRUE
+                   IMPORTED_GLOBAL TRUE)
 else()
     message(STATUS "MCTS NOT FOUND")
 endif()
+
 
 #### LIBRARY TARGETS ####
 add_library(UCT_PTA)
@@ -53,9 +55,10 @@ target_link_libraries(UCT_PTA
     PUBLIC
         UCT_PTA::Environments
         UCT_PTA::Core
-        #environments_objLib
-        #common_objLib
+    PRIVATE
+        MCTS::MCTS
         )
+
 
 target_compile_features(UCT_PTA PRIVATE cxx_auto_type)
 target_compile_options(UCT_PTA PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>)
@@ -68,10 +71,10 @@ install(
     TARGETS
         UCT_PTA
         Environments_uctpta
-        environments_objLib
+        environments_uctpta_objLib
         Core_uctpta
-        common_objLib
-        defaultpolicy_objLib
+        common_uctpta_objLib
+        defaultpolicy_uctpta_objLib
         EXPORT UCT_PTATargets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

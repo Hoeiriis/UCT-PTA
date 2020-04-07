@@ -5,21 +5,21 @@
 #include <cfloat>
 #include <cassert>
 #include <cmath>
-#include <UCT.h>
+#include <UCT_PTA.h>
 
-UCT::UCT(EnvironmentInterface &environment)
+UCT_PTA::UCT_PTA(EnvironmentInterface &environment)
 : _environment(environment), generator(std::mt19937(time(nullptr))), _defaultPolicy(UPPAAL_RandomSamplingDefaultPolicy(_environment)), root_node(SearchNode::create_SearchNode(nullptr, false)) {
     // UCT TreePolicy setup
     std::function<std::shared_ptr<SearchNode>(std::shared_ptr<SearchNode>)> f_expand =
-            std::bind(&UCT::m_expand, this, std::placeholders::_1);
+            std::bind(&UCT_PTA::m_expand, this, std::placeholders::_1);
 
     std::function<std::shared_ptr<SearchNode>(std::shared_ptr<SearchNode>, double)> f_best_child =
-            std::bind(&UCT::m_best_child, this, std::placeholders::_1, std::placeholders::_2);
+            std::bind(&UCT_PTA::m_best_child, this, std::placeholders::_1, std::placeholders::_2);
 
     _tpolicy = UCT_TreePolicy(f_expand, f_best_child);
 }
 
-State UCT::run(int n_searches) {
+State UCT_PTA::run(int n_searches) {
 
     time_t max_start = time(nullptr);
     long max_time = n_searches;
@@ -94,7 +94,7 @@ State UCT::run(int n_searches) {
 }
 
 
-std::shared_ptr<SearchNode> UCT::m_best_child(std::shared_ptr<SearchNode> node, double c) {
+std::shared_ptr<SearchNode> UCT_PTA::m_best_child(std::shared_ptr<SearchNode> node, double c) {
 
     auto best_score_so_far = std::numeric_limits<double>::lowest();
     std::vector<double> score_list = {};
@@ -126,7 +126,7 @@ std::shared_ptr<SearchNode> UCT::m_best_child(std::shared_ptr<SearchNode> node, 
 
 }
 
-std::shared_ptr<SearchNode> UCT::m_expand(std::shared_ptr<SearchNode> node) {
+std::shared_ptr<SearchNode> UCT_PTA::m_expand(std::shared_ptr<SearchNode> node) {
 
     int i_random = 0;
 
@@ -152,18 +152,18 @@ std::shared_ptr<SearchNode> UCT::m_expand(std::shared_ptr<SearchNode> node) {
     return expanded_node;
 }
 
-Reward UCT::m_default_policy(State &state) {
+Reward UCT_PTA::m_default_policy(State &state) {
     return _defaultPolicy.defaultPolicy(state);
 }
 
-void UCT::m_backpropagation(std::shared_ptr<SearchNode> node, Reward score) {
+void UCT_PTA::m_backpropagation(std::shared_ptr<SearchNode> node, Reward score) {
     return _backup.backup(node, score);
 }
 
-std::shared_ptr<SearchNode> UCT::m_tree_policy(std::shared_ptr<SearchNode> node) {
+std::shared_ptr<SearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<SearchNode> node) {
     return _tpolicy.treePolicy(node);
 }
 
-std::shared_ptr<SearchNode> UCT::m_search(int n_searches) {
+std::shared_ptr<SearchNode> UCT_PTA::m_search(int n_searches) {
     return std::shared_ptr<SearchNode>();
 }
