@@ -52,12 +52,8 @@ std::vector<State> DelaySamplingDefaultPolicy::findValidDelayedState(State &stat
                                                                      UppaalEnvironmentInterface &_environment) {
     std::tuple<int, int> delayBounds;
     int lowerDelayBound, upperDelayBound;
-<<<<<<< HEAD
     srand(time(NULL));
     int p, rndDelay;
-=======
-    int rndDelay;
->>>>>>> 6e72b0e0aad9c80d9b8e276d8593938aa5bfe56a
     // TODO check if the initialization is ok
     State delayedState = nullptr;
     std::set<int> nonValidDelays;
@@ -69,7 +65,6 @@ std::vector<State> DelaySamplingDefaultPolicy::findValidDelayedState(State &stat
     upperDelayBound = std::get<1>(delayBounds);
 
     while (!validDelayFound) {
-<<<<<<< HEAD
         std::uniform_int_distribution<int> uniformIntDistribution(1, 10);
         p = uniformIntDistribution(generator);
         if (p <= 3) {
@@ -83,11 +78,6 @@ std::vector<State> DelaySamplingDefaultPolicy::findValidDelayedState(State &stat
             rndDelay = uniformIntDistribution(generator);
         }
 
-=======
-        // TODO take into consideration "Andrej's probabilities" (budget of 30% on min and max delay,sth like that)
-        std::uniform_int_distribution<int> uniformIntDistribution(lowerDelayBound, upperDelayBound);
-        rndDelay = uniformIntDistribution(generator);
->>>>>>> 6e72b0e0aad9c80d9b8e276d8593938aa5bfe56a
         // skip chosen delay if it has been explored before and resulted in no ValidChildStates
         if (nonValidDelays.count(rndDelay) != 0) {
             continue;
