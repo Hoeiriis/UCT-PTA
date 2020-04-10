@@ -5,9 +5,10 @@
 #include <cfloat>
 #include <cassert>
 #include <cmath>
+#include <tuple>
 #include <UCT_PTA.h>
 
-UCT_PTA::UCT_PTA(EnvironmentInterface &environment)
+UCT_PTA::UCT_PTA(UppaalEnvironmentInterface &environment)
 : _environment(environment), generator(std::mt19937(time(nullptr))), _defaultPolicy(UPPAAL_RandomSamplingDefaultPolicy(_environment)), root_node(SearchNode::create_SearchNode(nullptr, false)) {
     // UCT TreePolicy setup
     std::function<std::shared_ptr<SearchNode>(std::shared_ptr<SearchNode>)> f_expand =
@@ -27,24 +28,14 @@ State UCT_PTA::run(int n_searches) {
 
     State initial_state = _environment.GetStartState();
     std::vector<State> unvisited_child_states = _environment.GetValidChildStates(initial_state);
-    m_root = SearchNode::create_SearchNode(nullptr, initial_state, false);
-    m_root->set_unvisited_child_states(unvisited_child_states);
+    root_node = SearchNode::create_SearchNode(nullptr, initial_state, false);
+    root_node->set_unvisited_child_states(unvisited_child_states);
 
-    // rough bootstrap of reward scaling
-    std::vector<double> rewards(100, 0);
-    for (int i = 0; i < 100; ++i) {
-        Reward score = m_default_policy(m_root->state);
-        rewards.at(i) = score;
-    }
-
-    auto it = std::minmax_element(std::begin(rewards), std::end(rewards));
-    rewardMinMax.first = *it.first;
-    rewardMinMax.second = *it.second;
-
+    bootstrap_reward_scaling();
 
     while(!best_proved && max_timeLeft > 0) {
         // TreePolicy runs to find an unexpanded node to expand
-        auto expandedNode = m_tree_policy(m_root);
+        auto expandedNode = m_tree_policy(root_node);
         // From the expanded node, a simulation runs that returns a score
         std::vector<double> sim_scores(20, 0);
         for (int i=0; i < 20; ++i){
@@ -84,12 +75,48 @@ State UCT_PTA::run(int n_searches) {
         max_timeLeft = max_time - (time(nullptr) - max_start);
     }
 
-    root_node = m_root;
-
     if (bestTerminalNodesFound.empty()){
         return nullptr;
     } else {
         return bestTerminalNodesFound.at(0).node->state;
+    }
+}
+
+void UCT_PTA::bootstrap_reward_scaling(){
+    // rough bootstrap of reward scaling
+    std::vector<double> rewards(100, 0);
+    for (int i = 0; i < 100; ++i) {
+        Reward score = m_default_policy(root_node->state);
+        rewards.at(i) = score;
+    }
+
+    auto it = std::minmax_element(std::begin(rewards), std::end(rewards));
+    rewardMinMax.first = *it.first;
+    rewardMinMax.second = *it.second;
+}
+
+std::shared_ptr<SearchNode> UCT_PTA::get_child_states(std::shared_ptr<SearchNode> node){
+
+    if(current_node_is_time){
+        // Calculate wether or not we are using a bound value (30% chance)
+        std::uniform_int_distribution<int> uniformIntDistribution(1, 10);
+        int i_random = uniformIntDistribution(generator);
+        bool use_bound_value = i_random <= 3;
+
+        // get bound values
+        std::tuple<int, int> bounds = _environment.GetDelayBounds(node->state);
+
+        if(use_bound_value)
+        {
+            std::uniform_int_distribution<int> uniformIntDistribution(0, 1);
+            int coinflip = uniformIntDistribution(generator);
+            int edgebound = std::get<coinflip>(bounds);
+        }
+
+
+
+
+
     }
 }
 
