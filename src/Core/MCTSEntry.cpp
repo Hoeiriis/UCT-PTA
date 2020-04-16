@@ -6,7 +6,7 @@
 #include <queue>
 #include <stack>
 
-MCTSEntry::MCTSEntry(EnvironmentInterface& env) : _environment(env)
+MCTSEntry::MCTSEntry(UppaalEnvironmentInterface& env) : _environment(env)
 {
 }
 

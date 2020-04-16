@@ -2,7 +2,7 @@
 #include <random>
 #include <vector>
 
-UPPAAL_RandomSamplingDefaultPolicy::UPPAAL_RandomSamplingDefaultPolicy(EnvironmentInterface &environment)
+UPPAAL_RandomSamplingDefaultPolicy::UPPAAL_RandomSamplingDefaultPolicy(UppaalEnvironmentInterface &environment)
     : DefaultPolicyBase(environment){};
 
 Reward UPPAAL_RandomSamplingDefaultPolicy::defaultPolicy(State state) {

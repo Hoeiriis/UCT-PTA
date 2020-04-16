@@ -18,5 +18,7 @@ target_include_directories(defaultpolicy_uctpta_objLib
         $<INSTALL_INTERFACE:include>)
 
 target_link_libraries(defaultpolicy_uctpta_objLib
+    PUBLIC
+        environments_uctpta_objLib
     PRIVATE
         MCTS::MCTS)

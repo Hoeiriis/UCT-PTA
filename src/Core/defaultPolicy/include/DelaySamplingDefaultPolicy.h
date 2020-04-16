@@ -10,7 +10,7 @@ class DelaySamplingDefaultPolicy : DefaultPolicyBase {
     explicit DelaySamplingDefaultPolicy(UppaalEnvironmentInterface &environment);
 
     Reward defaultPolicy(State) override;
-    std::vector<State> findValidDelayedState(State &state, UppaalEnvironmentInterface &_environment);
+    std::tuple<State, bool, bool> findDelayedState(State &state, UppaalEnvironmentInterface &_environment);
 
   private:
     std::vector<State> validStates;
