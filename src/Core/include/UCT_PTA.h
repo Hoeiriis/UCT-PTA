@@ -15,7 +15,7 @@
 
 class TerminalNodeScore {
   public:
-    std::shared_ptr<SearchNode> node;
+    std::shared_ptr<ExtendedSearchNode> node;
     double score;
     long time_to_find;
 };
@@ -27,22 +27,20 @@ class UCT_PTA {
     inline UppaalEnvironmentInterface &getEnvironment() { return _environment; }
     inline std::vector<TerminalNodeScore> &getBestTerminalNodeScore() { return bestTerminalNodesFound; }
 
-    std::shared_ptr<SearchNode> root_node;
+    std::shared_ptr<ExtendedSearchNode> root_node;
 
     std::mt19937 generator;
 
   protected:
     Reward m_default_policy(State &state);
-    std::shared_ptr<SearchNode> m_search(int n_searches);
-    std::shared_ptr<SearchNode> m_tree_policy(std::shared_ptr<SearchNode> node);
-    std::shared_ptr<SearchNode> m_best_child(std::shared_ptr<SearchNode> node, double c);
-    std::shared_ptr<SearchNode> m_expand(std::shared_ptr<ExtendedSearchNode> node);
-    void m_backpropagation(std::shared_ptr<SearchNode> node, Reward score);
+    std::shared_ptr<ExtendedSearchNode> m_search(int n_searches);
+    std::shared_ptr<ExtendedSearchNode> m_tree_policy(std::shared_ptr<ExtendedSearchNode> node);
+    std::shared_ptr<ExtendedSearchNode> m_best_child(std::shared_ptr<ExtendedSearchNode> node, double c);
+    std::shared_ptr<ExtendedSearchNode> m_expand(std::shared_ptr<ExtendedSearchNode> node_in);
+    void m_backpropagation(std::shared_ptr<ExtendedSearchNode> node, Reward score);
     void bootstrap_reward_scaling();
-    std::shared_ptr<SearchNode> get_child_states(std::shared_ptr<SearchNode> node);
 
     bool best_proved = false;
-    bool current_actions_are_time = true;
     UppaalEnvironmentInterface &_environment;
     std::vector<TerminalNodeScore> bestTerminalNodesFound;
     
@@ -52,11 +50,11 @@ class UCT_PTA {
     BasicBackup _backup = BasicBackup();
 
     // UCT TreePolicy setup
-    std::function<std::shared_ptr<SearchNode>(std::shared_ptr<SearchNode> node)> placeholderFunc =
-        [](std::shared_ptr<SearchNode> node) { return node; };
+    std::function<std::shared_ptr<ExtendedSearchNode>(std::shared_ptr<ExtendedSearchNode> node)> placeholderFunc =
+        [](std::shared_ptr<ExtendedSearchNode> node) { return node; };
 
-    std::function<std::shared_ptr<SearchNode>(std::shared_ptr<SearchNode> node, double c)> placeholderFunc2 =
-        [](std::shared_ptr<SearchNode> node, double c) { return node; };
+    std::function<std::shared_ptr<ExtendedSearchNode>(std::shared_ptr<ExtendedSearchNode> node, double c)> placeholderFunc2 =
+        [](std::shared_ptr<ExtendedSearchNode> node, double c) { return node; };
 
     // UCT Default Policy setup
     UPPAAL_RandomSamplingDefaultPolicy _defaultPolicy;

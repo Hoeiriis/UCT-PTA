@@ -12,21 +12,21 @@
 #ifndef MCTSENTRY_H
 #define MCTSENTRY_H
 
-#include <EnvironmentInterface.h>
+#include <UppaalEnvironmentInterface.h>
 #include <SearchNode.h>
 #include "UCT_PTA.h"
 
 class MCTSEntry {
 
 public:
-    explicit MCTSEntry(EnvironmentInterface& env);
+    explicit MCTSEntry(UppaalEnvironmentInterface& env);
     std::vector<State> state_trace{};
     bool run();
     bool bfs();
     bool dfs();
     int time_limit_sec = 10;
     int states_explored = 0;
-    int count_states(std::shared_ptr<SearchNode>& root);
+    int count_states(std::shared_ptr<ExtendedSearchNode>& root);
 
     inline std::vector<TerminalNodeScore> getTerminalNodeScores(){return terminalNodeScores;};
 
@@ -34,7 +34,7 @@ protected:
 
     void dfsLoop(State& currentState, int levels);
 
-    EnvironmentInterface& _environment;
+    UppaalEnvironmentInterface& _environment;
     std::vector<State> compute_state_trace(const std::shared_ptr<SearchNode>& final_node);
     std::vector<TerminalNodeScore> terminalNodeScores;
 };

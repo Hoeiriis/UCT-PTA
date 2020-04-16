@@ -6,7 +6,7 @@
 #include <queue>
 #include <stack>
 
-MCTSEntry::MCTSEntry(EnvironmentInterface& env) : _environment(env)
+MCTSEntry::MCTSEntry(UppaalEnvironmentInterface& env) : _environment(env)
 {
 }
 
@@ -32,17 +32,17 @@ bool MCTSEntry::run()
     return true;
 }
 
-int MCTSEntry::count_states(std::shared_ptr<SearchNode> &root) {
+int MCTSEntry::count_states(std::shared_ptr<ExtendedSearchNode> &root) {
 
     int count = 1;
 
-    std::queue<std::shared_ptr<SearchNode>> nodeQueue{};
-    std::shared_ptr<SearchNode>& currentNode = root;
+    std::queue<std::shared_ptr<ExtendedSearchNode>> nodeQueue{};
+    std::shared_ptr<ExtendedSearchNode>& currentNode = root;
 
     while (count == 1 || !nodeQueue.empty()){
         auto children = currentNode->child_nodes;
         for(auto& child : children){
-            nodeQueue.push(child);
+            nodeQueue.push(std::static_pointer_cast<ExtendedSearchNode>(child));
             count ++;
         }
 
