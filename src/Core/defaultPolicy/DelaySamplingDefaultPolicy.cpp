@@ -43,7 +43,7 @@ Reward DelaySamplingDefaultPolicy::defaultPolicy(State state) {
         i_random = uniformIntDistribution2(generator);
         state = validChildStates[i_random];
         // Fetch info from the new child state
-        validChildStates = _environment.GetValidChildStates(state);
+        validChildStates = ((UppaalEnvironmentInterface &)_environment).GetValidChildStatesNoDelay(state);
         isTerminal = (_environment).IsTerminal(state);
         states_unrolled++;
     }
@@ -69,23 +69,27 @@ std::tuple<State, bool, bool> DelaySamplingDefaultPolicy::findDelayedState(State
     srand(time(NULL));
 
     std::tuple<int, int> delayBounds = _environment.GetDelayBounds(state);
-    int lowerDelayBound = std::get<0>(delayBounds);
-    int upperDelayBound = std::get<1>(delayBounds);
+    int lowerDelayBound = (int)std::get<0>(delayBounds);
+    int upperDelayBound = (int)std::get<1>(delayBounds);
 
     // Search for a delayed state with children states , otherwise return null
     while (!validDelayFound) {
-        p = uniformIntDistribution1(generator);
-        if (p <= 3) {
-            if (rand() % 2 == 0) {
-                rndDelay = lowerDelayBound;
-            } else {
-                rndDelay = upperDelayBound;
-            }
+        if (lowerDelayBound == upperDelayBound) {
+            rndDelay = lowerDelayBound;
         } else {
-            std::uniform_int_distribution<int> uniformIntDistribution2(lowerDelayBound + 1, upperDelayBound - 1);
-            rndDelay = uniformIntDistribution2(generator);
+            p = uniformIntDistribution1(generator);
+            //if there is no values in between upper and lower bound 
+            if (upperDelayBound-lowerDelayBound==1 || p <= 3) {
+                if (rand() % 2 == 0) {
+                    rndDelay = lowerDelayBound;
+                } else {
+                    rndDelay = upperDelayBound;
+                }
+            } else {
+                std::uniform_int_distribution<int> uniformIntDistribution2(lowerDelayBound + 1, upperDelayBound - 1);
+                rndDelay = uniformIntDistribution2(generator);
+            }
         }
-
         // return if all of the delays have been explored
         if (exploredDelays.size() == upperDelayBound - lowerDelayBound + 1) {
             std::cout << "No delayed states found" << std::endl;
@@ -96,10 +100,10 @@ std::tuple<State, bool, bool> DelaySamplingDefaultPolicy::findDelayedState(State
             continue;
         }
 
-        // fetch the delayed state
+        // fetch the delayed stat/home/amijacika/Projects/AAU/uppaal_uctpta/server/modules/statmc/TigaSMC.cppe
         delayedState = std::get<0>(((UppaalEnvironmentInterface &)_environment).DelayState(state, rndDelay));
         // check if delayed state doesn't have children
-        if (_environment.GetValidChildStates(delayedState).empty()) {
+        if (_environment.GetValidChildStatesNoDelay(delayedState).empty()) {
             // Return if delayed state is terminal
             if (_environment.IsTerminal(delayedState)) {
                 return std::make_tuple(delayedState, true, true);
