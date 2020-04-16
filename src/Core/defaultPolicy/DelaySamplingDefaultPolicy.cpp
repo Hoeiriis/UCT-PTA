@@ -18,7 +18,7 @@ Reward DelaySamplingDefaultPolicy::defaultPolicy(State state) {
     int states_unrolled = 0;
     int i_random;
     State delayedState = State(nullptr);
-    std::vector<State> validChildStates = _environment.GetValidChildStates(state);
+    std::vector<State> validChildStates = ((UppaalEnvironmentInterface &)_environment).GetValidChildStatesNoDelay(state);
     bool isTerminal = _environment.IsTerminal(state);
     bool delayFound = false;
 
