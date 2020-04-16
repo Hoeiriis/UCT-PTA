@@ -7,6 +7,7 @@
 #include <cmath>
 #include <tuple>
 #include <UCT_PTA.h>
+#include <ExtendedSearchNode.h>
 
 UCT_PTA::UCT_PTA(UppaalEnvironmentInterface &environment)
 : _environment(environment), generator(std::mt19937(time(nullptr))), _defaultPolicy(UPPAAL_RandomSamplingDefaultPolicy(_environment)), root_node(SearchNode::create_SearchNode(nullptr, false)) {
@@ -16,8 +17,6 @@ UCT_PTA::UCT_PTA(UppaalEnvironmentInterface &environment)
 
     std::function<std::shared_ptr<SearchNode>(std::shared_ptr<SearchNode>, double)> f_best_child =
             std::bind(&UCT_PTA::m_best_child, this, std::placeholders::_1, std::placeholders::_2);
-
-    _tpolicy = UCT_TreePolicy(f_expand, f_best_child);
 }
 
 State UCT_PTA::run(int n_searches) {
@@ -97,28 +96,41 @@ void UCT_PTA::bootstrap_reward_scaling(){
 
 std::shared_ptr<SearchNode> UCT_PTA::get_child_states(std::shared_ptr<SearchNode> node){
 
-    if(current_node_is_time){
-        // Calculate wether or not we are using a bound value (30% chance)
-        std::uniform_int_distribution<int> uniformIntDistribution(1, 10);
-        int i_random = uniformIntDistribution(generator);
-        bool use_bound_value = i_random <= 3;
-
-        // get bound values
-        std::tuple<int, int> bounds = _environment.GetDelayBounds(node->state);
-
-        if(use_bound_value)
-        {
-            std::uniform_int_distribution<int> uniformIntDistribution(0, 1);
-            int coinflip = uniformIntDistribution(generator);
-            int edgebound = std::get<coinflip>(bounds);
-        }
-
-
+    if(current_actions_are_time){
 
 
 
     }
 }
+
+std::shared_ptr<SearchNode> UCT_PTA::get_time_child_states(std::shared_ptr<SearchNode> node)
+{
+    int delay;
+    // Calculate wether or not we are using a bound value (30% chance)
+    std::uniform_int_distribution<int> uniformIntDistribution(1, 10);
+    int i_random = uniformIntDistribution(generator);
+    bool use_bound_value = i_random <= 3;
+
+    // get bound values
+    std::tuple<int, int> bounds = _environment.GetDelayBounds(node->state);
+    int lower = std::get<0>(bounds);
+    int upper = std::get<1>(bounds);
+
+    if(use_bound_value)
+    {
+        std::uniform_int_distribution<int> uniformIntDistribution(0, 1);
+        int coinflip = uniformIntDistribution(generator);
+        delay = coinflip ? lower : upper;
+    }
+    else
+    {
+        std::uniform_int_distribution<int> randUpperLower(lower+1, upper-1);
+        delay = randUpperLower(generator);
+    }
+
+}
+
+
 
 
 std::shared_ptr<SearchNode> UCT_PTA::m_best_child(std::shared_ptr<SearchNode> node, double c) {
@@ -153,25 +165,54 @@ std::shared_ptr<SearchNode> UCT_PTA::m_best_child(std::shared_ptr<SearchNode> no
 
 }
 
-std::shared_ptr<SearchNode> UCT_PTA::m_expand(std::shared_ptr<SearchNode> node) {
+std::shared_ptr<SearchNode> UCT_PTA::m_expand(std::shared_ptr<SearchNode> node_in) {
+
+    auto node = std::dynamic_pointer_cast<ExtendedSearchNode>(node_in);
 
     int i_random = 0;
+    State expanded_state = nullptr;
 
-    if (node->unvisited_child_states.size() > 1) {
-        // Get unvisited state randomly
-        std::uniform_int_distribution<int> uniformIntDistribution(0, node->unvisited_child_states.size() - 1);
-        i_random = uniformIntDistribution(generator);
+    if(node->children_are_time_actions)
+    {
+        // Choose a delay action and delay the state
+
+        if (node->unvisited_child_states.size() > 1) {
+            // Get unvisited delays randomly
+            std::uniform_int_distribution<int> uniformIntDistribution(0, node->unvisited_child_states.size() - 1);
+            i_random = uniformIntDistribution(generator);
+        }
+
+        // delay the nodes state, to get the new child node
+        expanded_state = _environment.DelayState(node->state, node->unvisited_child_states.at(i_random));
     }
+    else
+    {
+        // Choose a transition action and transition
 
-    State expanded_state = node->unvisited_child_states.at(i_random);
+        if (node->unvisited_child_states.size() > 1) {
+            // Get unvisited state randomly
+            std::uniform_int_distribution<int> uniformIntDistribution(0, node->unvisited_child_states.size() - 1);
+            i_random = uniformIntDistribution(generator);
+        }
+
+        expanded_state = node->unvisited_child_states.at(i_random);
+    }
 
     // Create node from unvisited state
     auto is_terminal = _environment.IsTerminal(expanded_state);
-    auto expanded_node = SearchNode::create_SearchNode(node, expanded_state, is_terminal);
+    auto expanded_node = ExtendedSearchNode::create_ExtendedSearchNode(node_in, expanded_state, is_terminal, !node->children_are_time_actions);
 
-    // Set unvisited child States
-    auto unvisitedChildStates = _environment.GetValidChildStates(expanded_state);
-    expanded_node->set_unvisited_child_states(unvisitedChildStates);
+    if(node->children_are_time_actions)
+    {
+        // If the previous node had delay actions, the new node have transition actions which we set as valid child states
+        auto unvisitedChildStates = _environment.GetValidChildStatesNoDelay(expanded_state);
+        expanded_node->set_unvisited_child_states(unvisitedChildStates);
+    }
+    else
+    {
+
+    }
+
 
     // Remove the state from unvisited states
     node->unvisited_child_states.erase(node->unvisited_child_states.begin() + i_random);
@@ -188,7 +229,28 @@ void UCT_PTA::m_backpropagation(std::shared_ptr<SearchNode> node, Reward score) 
 }
 
 std::shared_ptr<SearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<SearchNode> node) {
-    return _tpolicy.treePolicy(node);
+
+    std::shared_ptr<SearchNode> current_node = std::move(node);
+    while (!current_node->isTerminalState) {
+
+        if(std::dynamic_pointer_cast<ExtendedSearchNode>(current_node)->children_are_time_actions)
+        {
+            // Calculate wether or not we are using a bound value (30% chance)
+            std::uniform_int_distribution<int> uniformIntDistribution(1, 100);
+            int i_random = uniformIntDistribution(generator);
+            bool use_bound_value = i_random <= 30;
+
+            current_node = use_bound_value ? current_node->child_nodes.at(0) : current_node->child_nodes.at(1);
+        }
+
+        if (!current_node->unvisited_child_states.empty()) {
+            return m_expand(current_node);
+        }
+        // 0.7071067811865475 = 1 / sqrt(2) which is the default cp value
+        current_node = m_best_child(current_node, 0.7071067811865475);
+    }
+    return current_node;
+
 }
 
 std::shared_ptr<SearchNode> UCT_PTA::m_search(int n_searches) {

@@ -1,4 +1,4 @@
-add_library(common_uctpta_objLib OBJECT)
+add_library(common_uctpta_objLib OBJECT ExtendedSearchNode.cpp include/ExtendedSearchNode.h)
 target_sources(common_uctpta_objLib
     PRIVATE
         UCT_PTA.cpp

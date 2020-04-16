@@ -11,6 +11,7 @@
 #include <UppaalEnvironmentInterface.h>
 #include <functional>
 #include <random>
+#include "ExtendedSearchNode.h"
 
 class TerminalNodeScore {
   public:
@@ -35,13 +36,13 @@ class UCT_PTA {
     std::shared_ptr<SearchNode> m_search(int n_searches);
     std::shared_ptr<SearchNode> m_tree_policy(std::shared_ptr<SearchNode> node);
     std::shared_ptr<SearchNode> m_best_child(std::shared_ptr<SearchNode> node, double c);
-    std::shared_ptr<SearchNode> m_expand(std::shared_ptr<SearchNode> node);
+    std::shared_ptr<SearchNode> m_expand(std::shared_ptr<ExtendedSearchNode> node);
     void m_backpropagation(std::shared_ptr<SearchNode> node, Reward score);
     void bootstrap_reward_scaling();
     std::shared_ptr<SearchNode> get_child_states(std::shared_ptr<SearchNode> node);
 
     bool best_proved = false;
-    bool current_node_is_time = true;
+    bool current_actions_are_time = true;
     UppaalEnvironmentInterface &_environment;
     std::vector<TerminalNodeScore> bestTerminalNodesFound;
     
@@ -56,8 +57,6 @@ class UCT_PTA {
 
     std::function<std::shared_ptr<SearchNode>(std::shared_ptr<SearchNode> node, double c)> placeholderFunc2 =
         [](std::shared_ptr<SearchNode> node, double c) { return node; };
-
-    UCT_TreePolicy _tpolicy = UCT_TreePolicy(placeholderFunc, placeholderFunc2);
 
     // UCT Default Policy setup
     UPPAAL_RandomSamplingDefaultPolicy _defaultPolicy;
