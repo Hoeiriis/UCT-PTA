@@ -18,12 +18,13 @@ Reward DelaySamplingDefaultPolicy::defaultPolicy(State state) {
     int states_unrolled = 0;
     int i_random;
     State delayedState = State(nullptr);
-    std::vector<State> validChildStates = ((UppaalEnvironmentInterface &)_environment).GetValidChildStatesNoDelay(state);
+    std::vector<State> validChildStates = ((UppaalEnvironmentInterface &)_environment).GetValidChildStates(state);
     bool isTerminal = _environment.IsTerminal(state);
     bool delayFound = false;
 
-    while (states_unrolled < 50 && (!validChildStates.empty()) && (!isTerminal)) {
+    while (states_unrolled < 100 && (!validChildStates.empty()) && (!isTerminal)) {
         // Part 1: Randomly picking a delayed state
+        // std::cout << "Delaying " << states_unrolled << "th delay..." << std::endl;
         std::tie(delayedState, delayFound, isTerminal) =
             findDelayedState(state, (UppaalEnvironmentInterface &)_environment);
         // if no delay was found skip reinitilizing the state into delayed state
@@ -34,16 +35,13 @@ Reward DelaySamplingDefaultPolicy::defaultPolicy(State state) {
             break;
         }
         // Part2: Randomly picking next state from children states
-        validChildStates = ((UppaalEnvironmentInterface &)_environment).GetValidChildStatesNoDelay(state);
-        // validChildStates = _environment.GetValidChildStates(state); // v_2 fetch child states (with delays ones
-        // included) from the delayed state
-
+        validChildStates = ((UppaalEnvironmentInterface &)_environment).GetValidChildStates(state);
         // uniformly choose one of the found children
         std::uniform_int_distribution<int> uniformIntDistribution2(0, validChildStates.size() - 1);
         i_random = uniformIntDistribution2(generator);
         state = validChildStates[i_random];
         // Fetch info from the new child state
-        validChildStates = ((UppaalEnvironmentInterface &)_environment).GetValidChildStatesNoDelay(state);
+        validChildStates = ((UppaalEnvironmentInterface &)_environment).GetValidChildStates(state);
         isTerminal = (_environment).IsTerminal(state);
         states_unrolled++;
     }
@@ -60,7 +58,6 @@ Reward DelaySamplingDefaultPolicy::defaultPolicy(State state) {
  */
 std::tuple<State, bool, bool> DelaySamplingDefaultPolicy::findDelayedState(State &state,
                                                                            UppaalEnvironmentInterface &_environment) {
-    // TODO check if the initialization is ok
     std::set<int> exploredDelays;
     State delayedState = State(nullptr);
     int p, rndDelay;
@@ -75,11 +72,15 @@ std::tuple<State, bool, bool> DelaySamplingDefaultPolicy::findDelayedState(State
     // Search for a delayed state with children states , otherwise return null
     while (!validDelayFound) {
         if (lowerDelayBound == upperDelayBound) {
+            if (lowerDelayBound == 0) {
+                // std::cout << "No delay for this state (Upper delay bound is 0)" << std::endl;
+                return std::make_tuple(State(nullptr), false, false);
+            }
             rndDelay = lowerDelayBound;
         } else {
             p = uniformIntDistribution1(generator);
-            //if there is no values in between upper and lower bound 
-            if (upperDelayBound-lowerDelayBound==1 || p <= 3) {
+            // If there is only upper and lower delay bound
+            if (upperDelayBound - lowerDelayBound + 1 == 0 || p <= 3) {
                 if (rand() % 2 == 0) {
                     rndDelay = lowerDelayBound;
                 } else {
@@ -90,27 +91,18 @@ std::tuple<State, bool, bool> DelaySamplingDefaultPolicy::findDelayedState(State
                 rndDelay = uniformIntDistribution2(generator);
             }
         }
-        // return if all of the delays have been explored
-        if (exploredDelays.size() == upperDelayBound - lowerDelayBound + 1) {
-            std::cout << "No delayed states found" << std::endl;
-            return std::make_tuple(State(nullptr), false, false);
-        }
-        // check if the chosen delay has already been explored  (it can be if it had no children) and skip it
-        if (exploredDelays.count(rndDelay) != 0) {
-            continue;
-        }
 
-        // fetch the delayed stat/home/amijacika/Projects/AAU/uppaal_uctpta/server/modules/statmc/TigaSMC.cppe
+        // Fetch the delayed state
+        // std::cout << "Delaying state by " << rndDelay << std::endl;
         delayedState = std::get<0>(((UppaalEnvironmentInterface &)_environment).DelayState(state, rndDelay));
-        // check if delayed state doesn't have children
-        if (_environment.GetValidChildStatesNoDelay(delayedState).empty()) {
-            // Return if delayed state is terminal
-            if (_environment.IsTerminal(delayedState)) {
-                return std::make_tuple(delayedState, true, true);
-            }
-            // mark if delay doesn't have children states but is not terminal and continue sampling delays
-            exploredDelays.insert(rndDelay);
-            continue;
+        // check if delayed state is terminal
+        if (_environment.IsTerminal(delayedState)) {
+            return std::make_tuple(delayedState, true, true);
+        }
+        // Check if delayed state does not have children (This should NOT occur)
+        if (_environment.GetValidChildStates(delayedState).empty()) {
+            // std::cout << "Delayed State doesn't have any children but is not terminal" << std::endl;
+            return std::make_tuple(State(nullptr), false, false);
         }
         validDelayFound = true;
     }
