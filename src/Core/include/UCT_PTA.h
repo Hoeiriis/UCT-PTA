@@ -36,9 +36,11 @@ class UCT_PTA {
     std::shared_ptr<ExtendedSearchNode> m_search(int n_searches);
     std::shared_ptr<ExtendedSearchNode> m_tree_policy(std::shared_ptr<ExtendedSearchNode> node);
     std::shared_ptr<ExtendedSearchNode> m_best_child(std::shared_ptr<ExtendedSearchNode> node, double c);
-    std::shared_ptr<ExtendedSearchNode> m_expand(std::shared_ptr<ExtendedSearchNode> node_in);
+    std::shared_ptr<ExtendedSearchNode> m_expand_delays(std::shared_ptr<ExtendedSearchNode> node_in);
+    std::shared_ptr<ExtendedSearchNode> m_expand_transitions(std::shared_ptr<ExtendedSearchNode> node_in);
     void m_backpropagation(std::shared_ptr<ExtendedSearchNode> node, Reward score);
     void bootstrap_reward_scaling();
+    int get_random_int_except(int lower, int upper, const std::vector<int>& exceptions);
 
     bool best_proved = false;
     UppaalEnvironmentInterface &_environment;

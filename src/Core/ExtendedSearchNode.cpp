@@ -5,10 +5,10 @@
 #include <optional>
 #include "ExtendedSearchNode.h"
 
-ExtendedSearchNode::ExtendedSearchNode(ExtendedSearchNode *parent_node, State &state, bool isTerminal,
-                                       bool children_are_time)
-                                       :SearchNode(parent_node, state, isTerminal) {
-    children_are_time_actions = children_are_time;
+ExtendedSearchNode::ExtendedSearchNode(ExtendedSearchNode *parent_node, State &state, bool isTerminal, bool children_are_time)
+    :SearchNode(parent_node, state, isTerminal)
+{
+    children_are_time = children_are_time;
 }
 
 std::shared_ptr<ExtendedSearchNode> ExtendedSearchNode::create_ExtendedSearchNode(std::shared_ptr<ExtendedSearchNode> &parent_node,
@@ -17,7 +17,7 @@ std::shared_ptr<ExtendedSearchNode> ExtendedSearchNode::create_ExtendedSearchNod
     State tempState = State(std::nullopt);
     auto newNode = std::make_shared<ExtendedSearchNode>(ExtendedSearchNode(parent_node.get(), tempState, isTerminal, children_are_time_actions));
     if (parent_node) {
-        parent_node->add_child((std::shared_ptr<SearchNode&>)(newNode));
+        parent_node->add_child((std::shared_ptr<SearchNode>)(newNode));
     }
 
     return newNode;
@@ -27,8 +27,7 @@ std::shared_ptr<ExtendedSearchNode> ExtendedSearchNode::create_ExtendedSearchNod
 std::shared_ptr<ExtendedSearchNode> ExtendedSearchNode::create_ExtendedSearchNode(ExtendedSearchNode *parent_node,
                                                                                   State &state, bool isTerminal,
                                                                                   bool children_are_time_actions){
-    State tempState = State(std::nullopt);
-    auto newNode = std::make_shared<ExtendedSearchNode>(ExtendedSearchNode(parent_node, tempState, isTerminal, children_are_time_actions));
+    auto newNode = std::make_shared<ExtendedSearchNode>(ExtendedSearchNode(parent_node, state, isTerminal, children_are_time_actions));
     if (parent_node) {
         parent_node->add_child((std::shared_ptr<SearchNode>)(newNode));
     }
@@ -36,11 +35,11 @@ std::shared_ptr<ExtendedSearchNode> ExtendedSearchNode::create_ExtendedSearchNod
     return newNode;
 }
 
-static std::shared_ptr<SearchNode> create_SearchNode(ExtendedSearchNode *parent_node, bool isTerminal, bool children_are_time_actions){
+std::shared_ptr<ExtendedSearchNode> ExtendedSearchNode::create_ExtendedSearchNode(ExtendedSearchNode *parent_node, bool isTerminal, bool children_are_time_actions){
     State tempState = State(std::nullopt);
     auto newNode = std::make_shared<ExtendedSearchNode>(ExtendedSearchNode(parent_node, tempState, isTerminal, children_are_time_actions));
     if (parent_node) {
-        parent_node->add_child((std::shared_ptr<SearchNode&>)(newNode));
+        parent_node->add_child((std::shared_ptr<SearchNode>)(newNode));
     }
 
     return newNode;

@@ -10,13 +10,13 @@
 #include <ExtendedSearchNode.h>
 
 UCT_PTA::UCT_PTA(UppaalEnvironmentInterface &environment)
-: _environment(environment), generator(std::mt19937(time(nullptr))), _defaultPolicy(UPPAAL_RandomSamplingDefaultPolicy(_environment)), root_node(ExtendedSearchNode::create_ExtendedSearchNode(nullptr, false)) {
-    // UCT TreePolicy setup
+: _environment(environment), generator(std::mt19937(time(nullptr))), _defaultPolicy(UPPAAL_RandomSamplingDefaultPolicy(_environment)), root_node(ExtendedSearchNode::create_ExtendedSearchNode(nullptr, false, true)) {
+    /** UCT TreePolicy setup
     std::function<std::shared_ptr<ExtendedSearchNode>(std::shared_ptr<ExtendedSearchNode>)> f_expand =
             std::bind(&UCT_PTA::m_expand, this, std::placeholders::_1);
 
     std::function<std::shared_ptr<ExtendedSearchNode>(std::shared_ptr<ExtendedSearchNode>, double)> f_best_child =
-            std::bind(&UCT_PTA::m_best_child, this, std::placeholders::_1, std::placeholders::_2);
+            std::bind(&UCT_PTA::m_best_child, this, std::placeholders::_1, std::placeholders::_2); **/
 }
 
 State UCT_PTA::run(int n_searches) {
@@ -128,26 +128,66 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_best_child(std::shared_ptr<Extend
 
 }
 
-std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand(std::shared_ptr<ExtendedSearchNode> node) {
+std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_delays(std::shared_ptr<ExtendedSearchNode> node) {
 
-    int i_random = 0;
     State expanded_state = nullptr;
 
-    if(node->children_are_time_actions)
-    {
-        // Choose a delay action and delay the state to be the new state
-        if (node->unvisitedDelays.size() > 1) {
-            // Get unvisited delays randomly
-            std::uniform_int_distribution<int> uniformIntDistribution(0, node->unvisitedDelays.size()-1);
-            i_random = uniformIntDistribution(generator);
-        }
+    int lower = node->bounds.first;
+    int upper = node->bounds.second;
+    int delay;
 
-        // delay the nodes state, to get the new child node
-        expanded_state = _environment.DelayState(node->state, node->unvisitedDelays.at(i_random));
-    }
-    else
+    if(node->visitedDelays.size() < 2)
     {
+        delay = node->visitedDelays.size() == 1 ? upper : lower;
+    }
+    else 
+    {
+        // Get unvisited delays randomly
+        delay = get_random_int_except((lower+1), (upper-1), node->visitedDelays);
+    }
+
+    // delay the nodes state, to get the new child node
+    expanded_state = _environment.DelayState(node->state, delay);
+
+    // Create node from unvisited state
+    auto is_terminal = _environment.IsTerminal(expanded_state);
+    std::shared_ptr<ExtendedSearchNode> expanded_node = ExtendedSearchNode::create_ExtendedSearchNode(node, expanded_state, is_terminal, !node->children_are_delay_actions);
+
+    // Set unvisited child
+    auto unvisitedChildStates = _environment.GetValidChildStatesNoDelay(expanded_state);
+    expanded_node->set_unvisited_child_states(unvisitedChildStates);
+
+    return expanded_node;
+}
+
+int UCT_PTA::get_random_int_except(int lower, int upper, const std::vector<int>& exceptions)
+{
+    std::uniform_int_distribution<int> uniformIntDistribution(0, upper-lower-exceptions.size());
+    int i_random = uniformIntDistribution(generator);
+
+    int n_passed = 0;
+
+    for (int exception : exceptions)
+    {
+        if(exception <= i_random+lower+n_passed)
+        {
+            n_passed += 1;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    return lower+n_passed+i_random;
+}
+
+
+std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_transitions(std::shared_ptr<ExtendedSearchNode> node) {
+        
         // Choose a transition action to get to the new state
+        int i_random = 0;
+        std::pair<int, int> bounds{-1, -1};
 
         if (node->unvisited_child_states.size() > 1) {
             // Get unvisited state randomly
@@ -155,43 +195,34 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand(std::shared_ptr<ExtendedSe
             i_random = uniformIntDistribution(generator);
         }
 
-        expanded_state = node->unvisited_child_states.at(i_random);
-    }
+        State expanded_state = node->unvisited_child_states.at(i_random);
+        auto is_terminal = _environment.IsTerminal(expanded_state);
+        bool childIsDelayAction = false;
+        
+        if(!is_terminal)
+        {
+            bounds = _environment.GetDelayBounds(expanded_state);
+        
+            childIsDelayAction = bounds.first != bounds.second;
+            // If there is only one valid delay, then we just delay immediately unless the delay is 0 (in which case it is not necessary) or the state is terminal
+            // Adriana: unless the delay is or is not 0? Is the condition even necessary ? :D 
+            if(childIsDelayAction && bounds.first == 0){
+                expanded_state = _environment.DelayState(expanded_state, bounds.first).first;
+            }
+        }
 
-    // Create node from unvisited state
-    auto is_terminal = _environment.IsTerminal(expanded_state);
-    std::shared_ptr<ExtendedSearchNode> expanded_node = ExtendedSearchNode::create_ExtendedSearchNode(node, expanded_state, is_terminal, !node->children_are_time_actions);
-
-    if(node->children_are_time_actions)
-    {
-        // If the previous node had delay actions, the new node have transition actions which we set as valid child states
-        auto unvisitedChildStates = _environment.GetValidChildStatesNoDelay(expanded_state);
-        expanded_node->set_unvisited_child_states(unvisitedChildStates);
-
+        // Create node from expanded_state
+        std::shared_ptr<ExtendedSearchNode> expanded_node = ExtendedSearchNode::create_ExtendedSearchNode(node, expanded_state, is_terminal, childIsDelayAction);
+        
+        if(childIsDelayAction)
+        {
+            expanded_node->bounds = bounds;
+        }
+        
         // Remove the state from unvisited states
         node->unvisited_child_states.erase(node->unvisited_child_states.begin() + i_random);
-    }
-    else
-    {
-        auto bounds = _environment.GetDelayBounds(expanded_node->state);
-        auto tempState = State(std::nullopt);
-        int lower = std::get<0>(bounds);
-        int upper = std::get<1>(bounds);
-
-        // If the previous node had transition actions, the new node will have delay actions
-        // divided into two children, one with the bounds as delay
-        auto bound_child = ExtendedSearchNode::create_ExtendedSearchNode(expanded_node, tempState, false, true);
-        bound_child->unvisitedDelays = {lower, upper};
-
-        // and one with the values between the bounds as delay
-        auto between_bound_child = ExtendedSearchNode::create_ExtendedSearchNode(expanded_node, tempState, false, true);
-        std::vector<int> tempV(upper-lower);
-        std::iota(tempV.begin(), tempV.end(), lower);
-        between_bound_child->unvisitedDelays = tempV;
-    }
-
-    return expanded_node;
 }
+
 
 Reward UCT_PTA::m_default_policy(State &state) {
     return _defaultPolicy.defaultPolicy(state);
@@ -206,20 +237,35 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<Exten
     std::shared_ptr<ExtendedSearchNode> current_node = std::move(node);
     while (!current_node->isTerminalState) {
 
-        if(current_node->children_are_time_actions)
+        if(current_node->children_are_delay_actions)
         {
-            // Calculate wether or not we are using a bound value (30% chance)
-            std::uniform_int_distribution<int> uniformIntDistribution(1, 100);
-            int i_random = uniformIntDistribution(generator);
-            bool use_bound_value = i_random <= 30;
+            int visitedSize = current_node->visitedDelays.size();
+            // Check if any bound values are unexpanded
+            if(visitedSize < 2)
+            {
+                return m_expand_delays(current_node);
+            }
 
-            auto tempNode = use_bound_value ? current_node->child_nodes.at(0) : current_node->child_nodes.at(1);
-            current_node = std::static_pointer_cast<ExtendedSearchNode>(tempNode);
+            int lower = current_node->bounds.first;
+            int upper = current_node->bounds.second;
+            int bound_range = (upper - lower)+1;
+            
+            bool allChildrenExplored = visitedSize == bound_range;
+
+            double percentageVisited = (double) visitedSize / (upper - lower);
+            bool explore = percentageVisited < 0.25 || visitedSize <= 25;
+
+            if(!allChildrenExplored && explore)
+            {
+                return m_expand_delays(current_node);
+            }
         }
 
-        if (!current_node->unvisited_child_states.empty()) {
-            return m_expand(current_node);
+        if (!current_node->unvisited_child_states.empty()) // always evaluates to false for nodes with delay actions
+        {
+            return m_expand_transitions(current_node);
         }
+
         // 0.7071067811865475 = 1 / sqrt(2) which is the default cp value
         current_node = m_best_child(current_node, 0.7071067811865475);
     }
