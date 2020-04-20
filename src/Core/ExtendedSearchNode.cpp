@@ -8,7 +8,7 @@
 ExtendedSearchNode::ExtendedSearchNode(ExtendedSearchNode *parent_node, State &state, bool isTerminal, bool children_are_time)
     :SearchNode(parent_node, state, isTerminal)
 {
-    children_are_time = children_are_time;
+    children_are_delay_actions = children_are_time;
 }
 
 std::shared_ptr<ExtendedSearchNode> ExtendedSearchNode::create_ExtendedSearchNode(std::shared_ptr<ExtendedSearchNode> &parent_node,
