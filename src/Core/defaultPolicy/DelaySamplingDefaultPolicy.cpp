@@ -50,7 +50,7 @@ Reward DelaySamplingDefaultPolicy::defaultPolicy(State state) {
 }
 
 /**
- *
+ *tu
  * @param state a state being delayed
  * @param _environment environment with defined delay contex
  * @return tuple <state delayedState,bool isFound,bool isTerminal> contains delayed state, flag if there is one found
@@ -66,8 +66,8 @@ std::tuple<State, bool, bool> DelaySamplingDefaultPolicy::findDelayedState(State
     srand(time(NULL));
 
     std::pair<int, int> delayBounds = _environment.GetDelayBounds(state);
-    int lowerDelayBound = (int)std::get<0>(delayBounds);
-    int upperDelayBound = (int)std::get<1>(delayBounds);
+    int lowerDelayBound = (int)(delayBounds).first;
+    int upperDelayBound = (int)(delayBounds).second;
 
     // Search for a delayed state with children states , otherwise return null
     while (!validDelayFound) {

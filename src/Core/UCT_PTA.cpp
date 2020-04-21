@@ -78,6 +78,8 @@ State UCT_PTA::run(int n_searches) {
                 bestTerminalNodesFound.push_back(newBestNode);
             }
             expandedNode->score = {-100000, 0};
+        } else {
+            expandedNodes.push_back(expandedNode);
         }
 
         // update maxTime
@@ -148,16 +150,12 @@ std::shared_ptr<SearchNode> UCT_PTA::m_expand(std::shared_ptr<SearchNode> node) 
     return expanded_node;
 }
 
-Reward UCT_PTA::m_default_policy(State &state) {
-    return _defaultPolicy.defaultPolicy(state); }
+Reward UCT_PTA::m_default_policy(State &state) { return _defaultPolicy.defaultPolicy(state); }
 
-void UCT_PTA::m_backpropagation(std::shared_ptr<SearchNode> node, Reward score) {
-    return _backup.backup(node, score); }
+void UCT_PTA::m_backpropagation(std::shared_ptr<SearchNode> node, Reward score) { return _backup.backup(node, score); }
 
 std::shared_ptr<SearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<SearchNode> node) {
     return _tpolicy.treePolicy(node);
 }
 
-std::shared_ptr<SearchNode> UCT_PTA::m_search(int n_searches) {
-    return std::shared_ptr<SearchNode>(); 
-}
+std::shared_ptr<SearchNode> UCT_PTA::m_search(int n_searches) { return std::shared_ptr<SearchNode>(); }
