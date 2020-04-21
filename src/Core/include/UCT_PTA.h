@@ -51,13 +51,6 @@ class UCT_PTA {
     // UCT Backup setup
     BasicBackup _backup = BasicBackup();
 
-    // UCT TreePolicy setup
-    std::function<std::shared_ptr<ExtendedSearchNode>(std::shared_ptr<ExtendedSearchNode> node)> placeholderFunc =
-        [](std::shared_ptr<ExtendedSearchNode> node) { return node; };
-
-    std::function<std::shared_ptr<ExtendedSearchNode>(std::shared_ptr<ExtendedSearchNode> node, double c)> placeholderFunc2 =
-        [](std::shared_ptr<ExtendedSearchNode> node, double c) { return node; };
-
     // UCT Default Policy setup
     UPPAAL_RandomSamplingDefaultPolicy _defaultPolicy;
 

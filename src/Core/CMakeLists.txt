@@ -2,11 +2,13 @@ add_library(common_uctpta_objLib OBJECT ExtendedSearchNode.cpp include/ExtendedS
 target_sources(common_uctpta_objLib
     PRIVATE
         UCT_PTA.cpp
-        MCTSEntry.cpp)
+        MCTSEntry.cpp
+        ExtendedSearchNode.cpp)
 
 Set_Multiple_PUBLIC_HEADER(common_uctpta_objLib
     ${CMAKE_CURRENT_SOURCE_DIR}/include/UCT_PTA.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/MCTSEntry.h)
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/MCTSEntry.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/ExtendedSearchNode.h)
 
 target_include_directories(common_uctpta_objLib
     PUBLIC
