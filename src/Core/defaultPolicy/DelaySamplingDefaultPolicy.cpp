@@ -22,7 +22,7 @@ Reward DelaySamplingDefaultPolicy::defaultPolicy(State state) {
     bool isTerminal = _environment.IsTerminal(state);
     bool delayFound = false;
 
-    while (states_unrolled < 100 && (!validChildStates.empty()) && (!isTerminal)) {
+    while (states_unrolled <  400 && (!validChildStates.empty()) && (!isTerminal)) {
         // Part 1: Randomly picking a delayed state
         // std::cout << "Delaying " << states_unrolled << "th delay..." << std::endl;
         std::tie(delayedState, delayFound, isTerminal) =
@@ -80,7 +80,7 @@ std::tuple<State, bool, bool> DelaySamplingDefaultPolicy::findDelayedState(State
         } else {
             p = uniformIntDistribution1(generator);
             // If there is only upper and lower delay bound
-            if (upperDelayBound - lowerDelayBound + 1 == 0 || p <= 3) {
+            if (upperDelayBound - lowerDelayBound - 1 == 0 || p <= 3) {
                 if (rand() % 2 == 0) {
                     rndDelay = lowerDelayBound;
                 } else {
