@@ -22,7 +22,7 @@ Reward DelaySamplingDefaultPolicy::defaultPolicy(State state) {
     bool isTerminal = _environment.IsTerminal(state);
     bool delayFound = false;
 
-    while (states_unrolled <  400 && (!validChildStates.empty()) && (!isTerminal)) {
+    while (states_unrolled <  100 && (!validChildStates.empty()) && (!isTerminal)) {
         // Part 1: Randomly picking a delayed state
         // std::cout << "Delaying " << states_unrolled << "th delay..." << std::endl;
         std::tie(delayedState, delayFound, isTerminal) =
