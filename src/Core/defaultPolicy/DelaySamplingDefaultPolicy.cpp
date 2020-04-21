@@ -18,7 +18,7 @@ Reward DelaySamplingDefaultPolicy::defaultPolicy(State state) {
     int states_unrolled = 0;
     int i_random;
     State delayedState = State(nullptr);
-    std::vector<State> validChildStates = ((UppaalEnvironmentInterface &)_environment).GetValidChildStates(state);
+    std::vector<State> validChildStates = _environment.GetValidChildStates(state);
     bool isTerminal = _environment.IsTerminal(state);
     bool delayFound = false;
 
@@ -35,13 +35,13 @@ Reward DelaySamplingDefaultPolicy::defaultPolicy(State state) {
             break;
         }
         // Part2: Randomly picking next state from children states
-        validChildStates = ((UppaalEnvironmentInterface &)_environment).GetValidChildStates(state);
+        validChildStates = _environment.GetValidChildStates(state);
         // uniformly choose one of the found children
         std::uniform_int_distribution<int> uniformIntDistribution2(0, validChildStates.size() - 1);
         i_random = uniformIntDistribution2(generator);
         state = validChildStates[i_random];
         // Fetch info from the new child state
-        validChildStates = ((UppaalEnvironmentInterface &)_environment).GetValidChildStates(state);
+        validChildStates = _environment.GetValidChildStates(state);
         isTerminal = (_environment).IsTerminal(state);
         states_unrolled++;
     }
@@ -65,7 +65,7 @@ std::tuple<State, bool, bool> DelaySamplingDefaultPolicy::findDelayedState(State
     std::uniform_int_distribution<int> uniformIntDistribution1(1, 10);
     srand(time(NULL));
 
-    std::tuple<int, int> delayBounds = _environment.GetDelayBounds(state);
+    std::pair<int, int> delayBounds = _environment.GetDelayBounds(state);
     int lowerDelayBound = (int)std::get<0>(delayBounds);
     int upperDelayBound = (int)std::get<1>(delayBounds);
 
@@ -94,7 +94,7 @@ std::tuple<State, bool, bool> DelaySamplingDefaultPolicy::findDelayedState(State
 
         // Fetch the delayed state
         // std::cout << "Delaying state by " << rndDelay << std::endl;
-        delayedState = std::get<0>(((UppaalEnvironmentInterface &)_environment).DelayState(state, rndDelay));
+        delayedState = (_environment.DelayState(state, rndDelay)).first;
         // check if delayed state is terminal
         if (_environment.IsTerminal(delayedState)) {
             return std::make_tuple(delayedState, true, true);
