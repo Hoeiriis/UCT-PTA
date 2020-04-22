@@ -21,8 +21,6 @@ bool MCTSEntry::run()
     terminalNodeScores = uct.getBestTerminalNodeScore();
 
     if(terminalNodeScores.empty()){
-        std::cout << "Printing trace" << std::endl;
-        state_trace = compute_state_trace(uct.getExpandedNodes().back());
         std::cout << "No terminal node was found in the compute time given." << std::endl;
     } else {
         auto termNode = terminalNodeScores.back();

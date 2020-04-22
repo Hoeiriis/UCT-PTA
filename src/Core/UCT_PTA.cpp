@@ -78,8 +78,6 @@ State UCT_PTA::run(int n_searches) {
                 bestTerminalNodesFound.push_back(newBestNode);
             }
             expandedNode->score = {-100000, 0};
-        } else {
-            expandedNodes.push_back(expandedNode);
         }
 
         // update maxTime

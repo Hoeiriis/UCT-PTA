@@ -28,7 +28,6 @@ class UCT_PTA : public MCTSInterface {
     State run(int n_searches) override;
     inline UppaalEnvironmentInterface &getEnvironment() override { return _environment; }
     inline std::vector<TerminalNodeScore> &getBestTerminalNodeScore() { return bestTerminalNodesFound; }
-    inline std::vector<std::shared_ptr<SearchNode>> &getExpandedNodes() { return expandedNodes; }
     std::shared_ptr<SearchNode> root_node;
 
     std::mt19937 generator;
@@ -44,7 +43,6 @@ class UCT_PTA : public MCTSInterface {
     UppaalEnvironmentInterface &_environment;
     bool best_proved = false;
     std::vector<TerminalNodeScore> bestTerminalNodesFound;
-    std::vector<std::shared_ptr<SearchNode>> expandedNodes;
 
   private:
     // UCT Backup setup
