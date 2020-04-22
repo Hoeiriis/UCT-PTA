@@ -6,6 +6,7 @@
 #include <cassert>
 #include <cmath>
 #include <tuple>
+#include <utility>
 #include <UCT_PTA.h>
 #include <ExtendedSearchNode.h>
 
@@ -26,18 +27,17 @@ State UCT_PTA::run(int n_searches) {
     long max_timeLeft = max_time;
 
     State initial_state = _environment.GetStartState();
-    std::vector<State> unvisited_child_states = _environment.GetValidChildStates(initial_state);
     root_node = ExtendedSearchNode::create_ExtendedSearchNode(nullptr, initial_state, false, true);
-    root_node->set_unvisited_child_states(unvisited_child_states);
+    root_node->bounds = _environment.GetDelayBounds(initial_state);
 
     bootstrap_reward_scaling();
 
     while(!best_proved && max_timeLeft > 0) {
         // TreePolicy runs to find an unexpanded node to expand
-        auto expandedNode = m_tree_policy(root_node);
+        std::shared_ptr<ExtendedSearchNode> expandedNode = m_tree_policy(root_node);
         // From the expanded node, a simulation runs that returns a score
-        std::vector<double> sim_scores(20, 0);
-        for (int i=0; i < 20; ++i){
+        /**std::vector<double> sim_scores(20, 0);
+        for (int i=0; i < 5; ++i){
             Reward simulation_score = m_default_policy(expandedNode->state);
             sim_scores.at(i) = simulation_score;
         }
@@ -50,9 +50,10 @@ State UCT_PTA::run(int n_searches) {
         }
 
         auto avg_score = std::accumulate(std::begin(sim_scores), std::begin(sim_scores), 0) / sim_scores.size();
-
+        **/
+        Reward score = m_default_policy(expandedNode->state);
         // normalize data
-        double norm_score = (avg_score-rewardMinMax.first)/(rewardMinMax.second - rewardMinMax.first);
+        double norm_score = (score-rewardMinMax.first)/(rewardMinMax.second - rewardMinMax.first);
         // The score is backpropagated up through the search tree
         m_backpropagation(expandedNode, norm_score);
 
@@ -94,7 +95,7 @@ void UCT_PTA::bootstrap_reward_scaling(){
     rewardMinMax.second = *it.second;
 }
 
-std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_best_child(std::shared_ptr<ExtendedSearchNode> node, double c) {
+std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_best_child(const std::shared_ptr<ExtendedSearchNode>& node, double c) {
 
     auto best_score_so_far = std::numeric_limits<double>::lowest();
     std::vector<double> score_list = {};
@@ -130,8 +131,6 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_best_child(std::shared_ptr<Extend
 
 std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_delays(std::shared_ptr<ExtendedSearchNode> node) {
 
-    State expanded_state = nullptr;
-
     int lower = node->bounds.first;
     int upper = node->bounds.second;
     int delay;
@@ -147,15 +146,24 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_delays(std::shared_ptr<Ext
     }
 
     // delay the nodes state, to get the new child node
-    expanded_state = _environment.DelayState(node->state, delay);
+    auto out = _environment.DelayState(node->state, delay);
+
+    if(!out.second)
+    {
+        assert(false);
+    }
+    State expanded_state = out.first;
 
     // Create node from unvisited state
-    auto is_terminal = _environment.IsTerminal(expanded_state);
-    std::shared_ptr<ExtendedSearchNode> expanded_node = ExtendedSearchNode::create_ExtendedSearchNode(node, expanded_state, is_terminal, !node->children_are_delay_actions);
+    bool is_terminal = _environment.IsTerminal(expanded_state);
+    std::shared_ptr<ExtendedSearchNode> expanded_node = ExtendedSearchNode::create_ExtendedSearchNode(node, expanded_state, is_terminal, false);
 
     // Set unvisited child
     auto unvisitedChildStates = _environment.GetValidChildStatesNoDelay(expanded_state);
     expanded_node->set_unvisited_child_states(unvisitedChildStates);
+
+    // Set the delay as visited
+    node->visitedDelays.push_back(delay);
 
     return expanded_node;
 }
@@ -173,15 +181,10 @@ int UCT_PTA::get_random_int_except(int lower, int upper, const std::vector<int>&
         {
             n_passed += 1;
         }
-        else
-        {
-            break;
-        }
     }
 
     return lower+n_passed+i_random;
 }
-
 
 std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_transitions(std::shared_ptr<ExtendedSearchNode> node) {
         
@@ -197,18 +200,20 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_transitions(std::shared_pt
 
         State expanded_state = node->unvisited_child_states.at(i_random);
         auto is_terminal = _environment.IsTerminal(expanded_state);
-        bool childIsDelayAction = false;
+        bool childIsDelayAction = true;
         
         if(!is_terminal)
         {
             bounds = _environment.GetDelayBounds(expanded_state);
         
-            childIsDelayAction = bounds.first != bounds.second;
+            bool only_one_delay = bounds.first == bounds.second;
             // If there is only one valid delay, then we just delay immediately unless the delay is 0 (in which case it is not necessary) or the state is terminal
             // Adriana: unless the delay is or is not 0? Is the condition even necessary ? :D 
-            if(childIsDelayAction && bounds.first == 0){
+            if(only_one_delay && bounds.first == 0){
                 expanded_state = _environment.DelayState(expanded_state, bounds.first).first;
             }
+
+            childIsDelayAction = !only_one_delay;
         }
 
         // Create node from expanded_state
@@ -218,17 +223,23 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_transitions(std::shared_pt
         {
             expanded_node->bounds = bounds;
         }
+        else
+        {
+            auto unvisited_child_states = _environment.GetValidChildStatesNoDelay(expanded_node->state);
+            expanded_node->set_unvisited_child_states(unvisited_child_states);
+        }
         
         // Remove the state from unvisited states
         node->unvisited_child_states.erase(node->unvisited_child_states.begin() + i_random);
-}
 
+    return  expanded_node;
+}
 
 Reward UCT_PTA::m_default_policy(State &state) {
     return _defaultPolicy.defaultPolicy(state);
 }
 
-void UCT_PTA::m_backpropagation(std::shared_ptr<ExtendedSearchNode> node, Reward score) {
+void UCT_PTA::m_backpropagation(const std::shared_ptr<ExtendedSearchNode>& node, Reward score) {
     return _backup.backup(node, score);
 }
 
@@ -253,7 +264,7 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<Exten
             bool allChildrenExplored = visitedSize == bound_range;
 
             double percentageVisited = (double) visitedSize / (upper - lower);
-            bool explore = percentageVisited < 0.25 || visitedSize <= 25;
+            bool explore = percentageVisited < 0.25 && visitedSize <= 10;
 
             if(!allChildrenExplored && explore)
             {
@@ -266,6 +277,7 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<Exten
             return m_expand_transitions(current_node);
         }
 
+        if(current_node->child_nodes.empty())
         // 0.7071067811865475 = 1 / sqrt(2) which is the default cp value
         current_node = m_best_child(current_node, 0.7071067811865475);
     }
