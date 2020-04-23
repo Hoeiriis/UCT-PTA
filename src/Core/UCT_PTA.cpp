@@ -246,6 +246,8 @@ void UCT_PTA::m_backpropagation(const std::shared_ptr<ExtendedSearchNode>& node,
 std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<ExtendedSearchNode> node) {
 
     std::shared_ptr<ExtendedSearchNode> current_node = std::move(node);
+    std::shared_ptr<ExtendedSearchNode> prevNode = nullptr;
+
     while (!current_node->isTerminalState) {
 
         if(current_node->children_are_delay_actions)
@@ -278,6 +280,20 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<Exten
         }
 
         if(current_node->child_nodes.empty())
+        {
+            // Node is non-terminal and has no children, remove from parent and set parent as current_node
+            auto it = std::find(prevNode->child_nodes.begin(), prevNode->child_nodes.end(), current_node);
+            if(it == prevNode->child_nodes.end()){
+                assert(false); // current_node should always be a child of previous node, thus impossible to get to this point
+            }
+            else
+            {
+                auto index = std::distance(prevNode->child_nodes.begin(), it);
+                prevNode->child_nodes.erase(prevNode->child_nodes.begin()+index);
+            }
+
+            current_node = prevNode;
+        }
         // 0.7071067811865475 = 1 / sqrt(2) which is the default cp value
         current_node = m_best_child(current_node, 0.7071067811865475);
     }
