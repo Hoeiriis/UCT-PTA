@@ -253,20 +253,23 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<Exten
         if(current_node->children_are_delay_actions)
         {
             int visitedSize = current_node->visitedDelays.size();
+            int lower = current_node->bounds.first;
+            int upper = current_node->bounds.second;
+            int n_bounds = lower == upper ? 1 : 2;
+
             // Check if any bound values are unexpanded
-            if(visitedSize < 2)
+            if(visitedSize < n_bounds)
             {
                 return m_expand_delays(current_node);
             }
 
-            int lower = current_node->bounds.first;
-            int upper = current_node->bounds.second;
-            int bound_range = (upper - lower)+1;
+            int visitedBoundRangeSize = visitedSize-n_bounds;
+            int bound_range = std::max((upper - lower)-1, 0);
             
-            bool allChildrenExplored = visitedSize == bound_range;
+            bool allChildrenExplored = visitedBoundRangeSize == bound_range;
 
-            double percentageVisited = (double) visitedSize / (upper - lower);
-            bool explore = percentageVisited < 0.25 && visitedSize <= 10;
+            double percentageVisited = (double) visitedBoundRangeSize / (bound_range+DBL_MIN);
+            bool explore = percentageVisited < 0.25 && visitedBoundRangeSize <= 10;
 
             if(!allChildrenExplored && explore)
             {
