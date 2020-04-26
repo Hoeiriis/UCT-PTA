@@ -31,7 +31,8 @@ macro(Set_Multiple_PUBLIC_HEADER TARGET)
 endmacro()
 
 #### DEPENDENCIES ####
-find_package(MCTS REQUIRED)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../packages/include/) 
+find_package(MCTS REQUIRED PATHS ${CMAKE_CURRENT_SOURCE_DIR}/../packages/ NO_DEFAULT_PATH)
 if(MCTS_FOUND)
     set_target_properties(
         MCTS::Environments
