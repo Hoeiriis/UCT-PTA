@@ -46,8 +46,8 @@ State UCT_PTA::run(int n_searches) {
         // TreePolicy runs to find an unexpanded node to expand
         auto expandedNode = m_tree_policy(m_root);
         // From the expanded node, a simulation runs that returns a score
-        std::vector<double> sim_scores(20, 0);
-        for (int i = 0; i < 20; ++i) {
+        std::vector<double> sim_scores(1, 0);
+        for (int i = 0; i < sim_scores.size() ; ++i) {
             Reward simulation_score = m_default_policy(expandedNode->state);
             sim_scores.at(i) = simulation_score;
         }
@@ -59,7 +59,12 @@ State UCT_PTA::run(int n_searches) {
             rewardMinMax.second = *simMinMax.second;
         }
 
-        auto avg_score = std::accumulate(std::begin(sim_scores), std::begin(sim_scores), 0) / sim_scores.size();
+        auto avg_score = 0;
+        if (sim_scores.size() > 1) {
+            avg_score = std::accumulate(std::begin(sim_scores), std::end(sim_scores), 0) / sim_scores.size();
+        } else {
+            avg_score = sim_scores.at(0);
+        }
 
         // normalize data
         double norm_score = (avg_score - rewardMinMax.first) / (rewardMinMax.second - rewardMinMax.first);
