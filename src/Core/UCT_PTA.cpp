@@ -36,24 +36,17 @@ State UCT_PTA::run(int n_searches) {
         // TreePolicy runs to find an unexpanded node to expand
         std::shared_ptr<ExtendedSearchNode> expandedNode = m_tree_policy(root_node);
         // From the expanded node, a simulation runs that returns a score
-        /**std::vector<double> sim_scores(20, 0);
-        for (int i=0; i < 5; ++i){
-            Reward simulation_score = m_default_policy(expandedNode->state);
-            sim_scores.at(i) = simulation_score;
-        }
-        auto simMinMax = std::minmax_element(std::begin(sim_scores), std::end(sim_scores));
+        Reward simulation_score = m_default_policy(expandedNode->state);
+
         // eventually update min max reward
-        if(*simMinMax.first < rewardMinMax.first){
-            rewardMinMax.first = *simMinMax.first;
-        } else if(*simMinMax.second > rewardMinMax.second){
-            rewardMinMax.second = *simMinMax.second;
+        if(simulation_score < rewardMinMax.first){
+            rewardMinMax.first = simulation_score;
+        } else if(simulation_score > rewardMinMax.second){
+            rewardMinMax.second = simulation_score;
         }
 
-        auto avg_score = std::accumulate(std::begin(sim_scores), std::begin(sim_scores), 0) / sim_scores.size();
-        **/
-        Reward score = m_default_policy(expandedNode->state);
         // normalize data
-        double norm_score = (score-rewardMinMax.first)/(rewardMinMax.second - rewardMinMax.first);
+        double norm_score = (simulation_score-rewardMinMax.first)/(rewardMinMax.second - rewardMinMax.first);
         // The score is backpropagated up through the search tree
         m_backpropagation(expandedNode, norm_score);
 
@@ -288,7 +281,7 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<Exten
             bool allChildrenExplored = visitedBoundRangeSize == bound_range;
 
             double percentageVisited = (double) visitedBoundRangeSize / (bound_range+DBL_MIN);
-            bool explore = percentageVisited < 0.25 && visitedBoundRangeSize <= 10;
+            bool explore = percentageVisited < 0.2 && visitedBoundRangeSize <= 5;
 
             if(!allChildrenExplored && explore)
             {
