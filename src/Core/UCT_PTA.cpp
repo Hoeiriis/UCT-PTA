@@ -33,8 +33,8 @@ State UCT_PTA::run(int n_searches) {
     m_root->set_unvisited_child_states(unvisited_child_states);
 
     // rough bootstrap of reward scaling
-    std::vector<double> rewards(500, 0);
-    for (int i = 0; i < 100; ++i) {
+    std::vector<double> rewards(100, 0);
+    for (int i = 0; i < rewards.size(); ++i) {
         Reward score = m_default_policy(m_root->state);
         rewards.at(i) = score;
     }
@@ -47,15 +47,29 @@ State UCT_PTA::run(int n_searches) {
         // TreePolicy runs to find an unexpanded node to expand
         auto expandedNode = m_tree_policy(m_root);
         // From the expanded node, a simulation runs that returns a score
-        Reward simulation_score = m_default_policy(expandedNode->state);
-        // eventually update min max reward
-        if (simulation_score < rewardMinMax.first) {
-            rewardMinMax.first = simulation_score;
-        } else if (simulation_score > rewardMinMax.second) {
-            rewardMinMax.second = simulation_score;
+        std::vector<double> sim_scores(1, 0);
+        for (int i = 0; i < sim_scores.size(); ++i) {
+            Reward simulation_score = m_default_policy(expandedNode->state);
+            sim_scores.at(i) = simulation_score;
         }
+        
+        auto simMinMax = std::minmax_element(std::begin(sim_scores), std::end(sim_scores));
+        // eventually update min max reward
+        if (*simMinMax.first < rewardMinMax.first) {
+            rewardMinMax.first = *simMinMax.first;
+        } else if (*simMinMax.second > rewardMinMax.second) {
+            rewardMinMax.second = *simMinMax.second;
+        }
+
+        auto avg_score = 0;
+        if (sim_scores.size() > 1) {
+            avg_score = std::accumulate(std::begin(sim_scores), std::end(sim_scores), 0) / sim_scores.size();
+        } else {
+            avg_score = sim_scores.at(0);
+        }
+
         // normalize data
-        double norm_score = (simulation_score - rewardMinMax.first) / (rewardMinMax.second - rewardMinMax.first);
+        double norm_score = (avg_score - rewardMinMax.first) / (rewardMinMax.second - rewardMinMax.first);
 
         // The score is backpropagated up through the search tree
         m_backpropagation(expandedNode, norm_score);
