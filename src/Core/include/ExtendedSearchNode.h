@@ -12,7 +12,6 @@ class ExtendedSearchNode : public SearchNode {
     ExtendedSearchNode(ExtendedSearchNode *parent_node, State &state, bool isTerminal, bool children_are_time_actions);
 
   public:
-    //    std::vector<int>
     static std::shared_ptr<ExtendedSearchNode>
     create_ExtendedSearchNode(std::shared_ptr<ExtendedSearchNode> &parent_node, State &state, bool isTerminal,
                               bool children_are_time_actions);
@@ -22,7 +21,7 @@ class ExtendedSearchNode : public SearchNode {
 
     bool children_are_delay_actions;
     std::vector<int> visitedDelays{};
-    std::pair<int, int> bounds{-1, -1};
+    std::pair<int, int> bounds{ -1, -1};
 };
 
 #endif // EXAMPLE_EXEC_EXTENDEDSEARCHNODE_H

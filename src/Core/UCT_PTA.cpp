@@ -129,30 +129,25 @@ std::shared_ptr<SearchNode> UCT_PTA::m_best_child(const SearchNode* node, double
 
 }
 
-std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_delays(std::shared_ptr<ExtendedSearchNode> node_in)
-{
-    return m_expand_delays(node_in, node_in->state, node_in->bounds);
-}
+std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_delays(std::shared_ptr<ExtendedSearchNode> node) {
 
-std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_delays(std::shared_ptr<ExtendedSearchNode> node, State currentState, std::pair<int, int> bounds) {
-
-    int lower = bounds.first;
-    int upper = bounds.second;
+    // choose a delay
+    int lower = node->bounds.first;
+    int upper = node->bounds.second;
     int delay;
     State expanded_state = nullptr;
 
-    if(lower == upper)
+    if(lower == upper) //If they are equal, just choose one of them
     {
         delay = lower;
     }
-    else if(node->visitedDelays.size() < 2)
+    else if(node->visitedDelays.size() < 2) // If size is less than two, the bounds have not been expanded
     {
         delay = node->visitedDelays.size() == 1 ? upper : lower;
     }
-    else 
+    else // lastly expand in the range between the bounds
     {
-        // Get unvisited delays randomly
-        delay = get_random_int_except((lower+1), (upper-1), node->visitedDelays);
+        delay = get_random_int_except(lower, upper, node->visitedDelays);
     }
 
     // delay the nodes state, to get the new child node
@@ -162,38 +157,32 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_delays(std::shared_ptr<Ext
     }
     else
     {
-        auto out = _environment.DelayState(currentState, delay);
+        auto out = _environment.DelayState(node->state, delay);
 
         if(!out.second)
         {
-            assert(false);
+            assert(false); // Delay failed, which should not be possible if GetDelayBounds works correctly
         }
         expanded_state = out.first;
     }
-    auto unvisitedChildStates = _environment.GetValidChildStatesNoDelay(expanded_state);
-    if(unvisitedChildStates.size() == 1) // Immediately expand if only one child
-    {
-        return m_expand_transitions(node, unvisitedChildStates.at(0));
-    }
 
-
-    // Create node from unvisited state
+    // Create a node from the newly expanded state
     bool is_terminal = _environment.IsTerminal(expanded_state);
-    std::shared_ptr<ExtendedSearchNode> expanded_node = ExtendedSearchNode::create_ExtendedSearchNode(node, expanded_state, is_terminal, false);
+    auto unvisitedChildStates = _environment.GetValidChildStatesNoDelay(expanded_state);
 
-    // Set unvisited child
+    std::shared_ptr<ExtendedSearchNode> expanded_node = ExtendedSearchNode::create_ExtendedSearchNode(
+            node, expanded_state, is_terminal, false);
     expanded_node->set_unvisited_child_states(unvisitedChildStates);
-
-    // Set the delay as visited
-    node->visitedDelays.push_back(delay);
 
     return expanded_node;
 }
 
-int UCT_PTA::get_random_int_except(int lower, int upper, const std::vector<int>& exceptions)
+int UCT_PTA::get_random_int_except(int lower, int upper, std::vector<int>& exceptions)
 {
     std::uniform_int_distribution<int> uniformIntDistribution(0, upper-lower-exceptions.size());
     int i_random = uniformIntDistribution(generator);
+
+    std::sort(exceptions.begin(), exceptions.end());
 
     int n_passed = 0;
 
@@ -210,6 +199,7 @@ int UCT_PTA::get_random_int_except(int lower, int upper, const std::vector<int>&
 
 std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_transitions(std::shared_ptr<ExtendedSearchNode> node)
 {
+
     // Choose a transition action to get to the new state
     int i_random = 0;
 
@@ -223,27 +213,15 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_transitions(std::shared_pt
     // Remove the state from unvisited states
     node->unvisited_child_states.erase(node->unvisited_child_states.begin() + i_random);
 
-    return m_expand_transitions(node, expanded_state);
-}
 
-std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_transitions(std::shared_ptr<ExtendedSearchNode> node, State expanded_state) {
-        auto is_terminal = _environment.IsTerminal(expanded_state);
+    // Create a node from the newly expanded state
+    auto is_terminal = _environment.IsTerminal(expanded_state);
 
-        std::pair<int, int> bounds{-1, -1};
-        if(!is_terminal)
-        {
-            bounds = _environment.GetDelayBounds(expanded_state);
-        
-            bool only_one_delay = bounds.first == bounds.second;
-            // If there is only one valid delay, then we just delay immediately
-            if(only_one_delay){
-                return m_expand_delays(node, expanded_state, bounds);
-            }
-        }
+    std::pair<int, int> bounds = _environment.GetDelayBounds(expanded_state);
 
-        // Create node from expanded_state
-        std::shared_ptr<ExtendedSearchNode> expanded_node = ExtendedSearchNode::create_ExtendedSearchNode(node, expanded_state, is_terminal, !is_terminal);
-        expanded_node->bounds = bounds;
+    // Create node from expanded_state
+    std::shared_ptr<ExtendedSearchNode> expanded_node = ExtendedSearchNode::create_ExtendedSearchNode(node, expanded_state, is_terminal, !is_terminal);
+    expanded_node->bounds = bounds;
 
     return  expanded_node;
 }
@@ -276,12 +254,12 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<Exten
             }
 
             int visitedBoundRangeSize = visitedSize-n_bounds;
-            int bound_range = std::max((upper - lower)-1, 0);
+            int bound_range = std::max((upper-1) - (lower+1), 0);
             
             bool allChildrenExplored = visitedBoundRangeSize == bound_range;
 
             double percentageVisited = (double) visitedBoundRangeSize / (bound_range+DBL_MIN);
-            bool explore = percentageVisited < 0.2 && visitedBoundRangeSize <= 5;
+            bool explore = visitedBoundRangeSize <= 15; //&& percentageVisited < 0.2
 
             if(!allChildrenExplored && explore)
             {
