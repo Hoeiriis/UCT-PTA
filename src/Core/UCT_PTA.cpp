@@ -174,6 +174,9 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_delays(std::shared_ptr<Ext
             node, expanded_state, is_terminal, false);
     expanded_node->set_unvisited_child_states(unvisitedChildStates);
 
+    // Set the delay as visited
+    node->visitedDelays.push_back(delay);
+
     return expanded_node;
 }
 
