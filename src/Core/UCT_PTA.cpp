@@ -173,6 +173,8 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_delays(std::shared_ptr<Ext
     std::shared_ptr<ExtendedSearchNode> expanded_node = ExtendedSearchNode::create_ExtendedSearchNode(
             node, expanded_state, is_terminal, false);
     expanded_node->set_unvisited_child_states(unvisitedChildStates);
+    // Set the delay as visited
+    node->visitedDelays.push_back(delay);
 
     return expanded_node;
 }
@@ -254,7 +256,7 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<Exten
             }
 
             int visitedBoundRangeSize = visitedSize-n_bounds;
-            int bound_range = std::max((upper-1) - (lower+1), 0);
+            int bound_range = std::max((upper-1) - (lower+1) + 1, 0);
             
             bool allChildrenExplored = visitedBoundRangeSize == bound_range;
 
