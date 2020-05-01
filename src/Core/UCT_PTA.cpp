@@ -257,7 +257,7 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<Exten
             }
 
             int visitedBoundRangeSize = visitedSize-n_bounds;
-            int bound_range = std::max((upper-1) - (lower+1), 0);
+            int bound_range = std::max((upper - lower)-1, 0);
             
             bool allChildrenExplored = visitedBoundRangeSize == bound_range;
 
@@ -277,12 +277,13 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<Exten
 
         if(current_node->child_nodes.empty())
         {
-            SearchNode* removeNode = current_node.get();
-            SearchNode* parent = nullptr;
+            ExtendedSearchNode* removeNode = current_node.get();
+            ExtendedSearchNode* parent = nullptr;
+            bool delaysExplored;
 
             do
             {
-                parent = removeNode->parent;
+                parent = removeNode->parent_extended;
                 // Node is non-terminal and has no children, remove from parent and set parent as current_node
                 for(unsigned long i = 0; i <= parent->child_nodes.size(); i++)
                 {
@@ -293,7 +294,12 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<Exten
                     }
                 }
                 removeNode = parent;
-            } while(parent->child_nodes.empty());
+
+                delaysExplored = parent->children_are_delay_actions ?
+                        parent->visitedDelays.size() == (parent->bounds.second-parent->bounds.first)+1 :
+                        true;
+
+            } while(parent->child_nodes.empty() && parent->unvisited_child_states.empty() && delaysExplored);
 
             auto outChild = m_best_child(parent, 0.7071067811865475);
             current_node = std::static_pointer_cast<ExtendedSearchNode>(outChild);

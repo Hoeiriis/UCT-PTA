@@ -20,6 +20,7 @@ class ExtendedSearchNode : public SearchNode {
     static std::shared_ptr<ExtendedSearchNode> create_ExtendedSearchNode(ExtendedSearchNode *parent_node, bool isTerminal, bool children_are_time_actions);
 
     bool children_are_delay_actions;
+    ExtendedSearchNode* parent_extended;
     std::vector<int> visitedDelays{};
     std::pair<int, int> bounds{ -1, -1};
 };
