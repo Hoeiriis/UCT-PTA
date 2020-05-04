@@ -62,11 +62,7 @@ State UCT_PTA::run(int n_searches) {
         }
 
         auto avg_score = 0;
-        if (sim_scores.size() > 1) {
-            avg_score = std::accumulate(std::begin(sim_scores), std::end(sim_scores), 0) / sim_scores.size();
-        } else {
-            avg_score = sim_scores.at(0);
-        }
+        avg_score = std::accumulate(std::begin(sim_scores), std::end(sim_scores), 0.0) / sim_scores.size();
 
         // normalize data
         double norm_score = (avg_score - rewardMinMax.first) / (rewardMinMax.second - rewardMinMax.first);
