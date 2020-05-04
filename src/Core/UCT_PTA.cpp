@@ -88,7 +88,7 @@ void UCT_PTA::bootstrap_reward_scaling(){
     rewardMinMax.second = *it.second;
 }
 
-std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_best_child(const std::shared_ptr<ExtendedSearchNode>& node, double c) {
+std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_best_child(std::shared_ptr<ExtendedSearchNode> node, double c) {
     auto baseNode = std::static_pointer_cast<SearchNode>(node);
     auto outChild = m_best_child(baseNode.get(), c);
     return std::static_pointer_cast<ExtendedSearchNode>(outChild);
@@ -262,7 +262,7 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<Exten
             bool allChildrenExplored = visitedBoundRangeSize == bound_range;
 
             double percentageVisited = (double) visitedBoundRangeSize / (bound_range+DBL_MIN);
-            bool explore = visitedBoundRangeSize <= 15; //&& percentageVisited < 0.2
+            bool explore = visitedBoundRangeSize <= 10 && percentageVisited < 0.2;
 
             if(!allChildrenExplored && explore)
             {
