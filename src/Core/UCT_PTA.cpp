@@ -33,7 +33,7 @@ State UCT_PTA::run(int n_searches) {
 
     // rough bootstrap of reward scaling
     std::vector<double> rewards(100, 0);
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < rewards.size() ; ++i) {
         Reward score = m_default_policy(m_root->state);
         rewards.at(i) = score;
     }
