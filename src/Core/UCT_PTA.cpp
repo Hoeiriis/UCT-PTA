@@ -34,7 +34,7 @@ State UCT_PTA::run(int n_searches) {
 
     // rough bootstrap of reward scaling
     std::vector<double> rewards(100, 0);
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < rewards.size(); ++i) {
         Reward score = m_default_policy(m_root->state);
         rewards.at(i) = score;
     }
@@ -48,12 +48,14 @@ State UCT_PTA::run(int n_searches) {
         auto expandedNode = m_tree_policy(m_root);
         // From the expanded node, a simulation runs that returns a score
         Reward simulation_score = m_default_policy(expandedNode->state);
+
         // eventually update min max reward
         if (simulation_score < rewardMinMax.first) {
             rewardMinMax.first = simulation_score;
         } else if (simulation_score > rewardMinMax.second) {
             rewardMinMax.second = simulation_score;
         }
+        
         // normalize data
         double norm_score = (simulation_score - rewardMinMax.first) / (rewardMinMax.second - rewardMinMax.first);
 
