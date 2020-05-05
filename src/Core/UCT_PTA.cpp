@@ -35,6 +35,7 @@ State UCT_PTA::run(int n_searches) {
     while(!best_proved && max_timeLeft > 0) {
         // TreePolicy runs to find an unexpanded node to expand
         std::shared_ptr<ExtendedSearchNode> expandedNode = m_tree_policy(root_node);
+
         // From the expanded node, a simulation runs that returns a score
         Reward simulation_score = m_default_policy(expandedNode->state);
 
@@ -135,46 +136,60 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_delays(std::shared_ptr<Ext
     int lower = node->bounds.first;
     int upper = node->bounds.second;
     int delay;
+    int delayRange = std::max((upper) - (lower) + 1, 0);
     State expanded_state = nullptr;
 
-    if(lower == upper) //If they are equal, just choose one of them
-    {
-        delay = lower;
-    }
-    else if(node->visitedDelays.size() < 2) // If size is less than two, the bounds have not been expanded
-    {
-        delay = node->visitedDelays.size() == 1 ? upper : lower;
-    }
-    else // lastly expand in the range between the bounds
-    {
-        delay = get_random_int_except(lower, upper, node->visitedDelays);
-    }
+    std::vector<State> unvisitedChildStates{};
+    bool is_terminal;
 
-    // delay the nodes state, to get the new child node
-    if(delay == 0)
+    do
     {
-        expanded_state = node->state;
-    }
-    else
-    {
-        auto out = _environment.DelayState(node->state, delay);
-
-        if(!out.second)
+        if(lower == upper) //If they are equal, just choose one of them
         {
-            assert(false); // Delay failed, which should not be possible if GetDelayBounds works correctly
+            delay = lower;
         }
-        expanded_state = out.first;
+        else if(node->visitedDelays.size() < 2) // If size is less than two, the bounds have not been expanded
+        {
+            delay = node->visitedDelays.size() == 1 ? upper : lower;
+        }
+        else // lastly expand in the range between the bounds
+        {
+            delay = get_random_int_except(lower, upper, node->visitedDelays);
+        }
+
+        // delay the nodes state, to get the new child node
+        if(delay == 0)
+        {
+            expanded_state = node->state;
+        }
+        else
+        {
+            auto out = _environment.DelayState(node->state, delay);
+
+            if(!out.second)
+            {
+                assert(false); // Delay failed, which should not be possible if GetDelayBounds works correctly
+            }
+            expanded_state = out.first;
+        }
+
+        // Create a node from the newly expanded state
+        is_terminal = _environment.IsTerminal(expanded_state);
+        unvisitedChildStates = _environment.GetValidChildStatesNoDelay(expanded_state);
+
+        // Set the delay as visited
+        node->visitedDelays.push_back(delay);
+
+        // if the newly expanded state has no child state, then we try another delay
+    } while(unvisitedChildStates.empty() && (node->visitedDelays.size() != delayRange) && !is_terminal);
+
+    if(node->visitedDelays.size() == delayRange && unvisitedChildStates.empty())
+    {
+        return nullptr;
     }
 
-    // Create a node from the newly expanded state
-    bool is_terminal = _environment.IsTerminal(expanded_state);
-    auto unvisitedChildStates = _environment.GetValidChildStatesNoDelay(expanded_state);
-
-    std::shared_ptr<ExtendedSearchNode> expanded_node = ExtendedSearchNode::create_ExtendedSearchNode(
-            node, expanded_state, is_terminal, false);
+    std::shared_ptr<ExtendedSearchNode> expanded_node = ExtendedSearchNode::create_ExtendedSearchNode(node, expanded_state, is_terminal, false);
     expanded_node->set_unvisited_child_states(unvisitedChildStates);
-    // Set the delay as visited
-    node->visitedDelays.push_back(delay);
 
     return expanded_node;
 }
@@ -261,11 +276,15 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<Exten
             bool allChildrenExplored = visitedBoundRangeSize == bound_range;
 
             double percentageVisited = (double) visitedBoundRangeSize / (bound_range+DBL_MIN);
-            bool explore = visitedBoundRangeSize <= 10 && percentageVisited < 0.2;
+            bool explore = visitedBoundRangeSize <= 10 && percentageVisited < 0.3;
 
             if(!allChildrenExplored && explore)
             {
-                return m_expand_delays(current_node);
+                auto expandedNode = m_expand_delays(current_node);
+                if(expandedNode != nullptr)
+                {
+                    return expandedNode;
+                }
             }
         }
 
