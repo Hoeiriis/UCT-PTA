@@ -26,6 +26,7 @@ State UCT_PTA::run(int n_searches) {
     time_t max_start = time(nullptr);
     long max_time = n_searches;
     long max_timeLeft = max_time;
+    long nodes_expanded = 0;
 
     State initial_state = _environment.GetStartState();
     std::vector<State> unvisited_child_states = _environment.GetValidChildStates(initial_state);
@@ -70,6 +71,7 @@ State UCT_PTA::run(int n_searches) {
                 newBestNode.score = termReward;
                 newBestNode.node = expandedNode;
                 newBestNode.time_to_find = (time(nullptr) - max_start);
+                newBestNode.nodes_expanded = nodes_expanded;
                 // insert at beginning
                 bestTerminalNodesFound.push_back(newBestNode);
             }
@@ -78,6 +80,7 @@ State UCT_PTA::run(int n_searches) {
 
         // update maxTime
         max_timeLeft = max_time - (time(nullptr) - max_start);
+        nodes_expanded += 1;
     }
 
     root_node = m_root;
