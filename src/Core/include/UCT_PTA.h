@@ -18,6 +18,7 @@ class TerminalNodeScore {
     std::shared_ptr<ExtendedSearchNode> node;
     double score;
     long time_to_find;
+    long nodes_expanded;
 };
 
 class UCT_PTA {
