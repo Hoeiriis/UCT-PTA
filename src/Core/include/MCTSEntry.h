@@ -26,7 +26,7 @@ class MCTSEntry {
     bool dfs();
     int time_limit_sec = 10;
     int states_explored = 0;
-    int count_states(std::shared_ptr<SearchNode> &root);
+    int count_states(std::shared_ptr<ExtendedSearchNode> &root);
 
     inline std::vector<TerminalNodeScore> getTerminalNodeScores() { return terminalNodeScores; };
 

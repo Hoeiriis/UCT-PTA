@@ -6,21 +6,16 @@
 #include <queue>
 #include <stack>
 
-MCTSEntry::MCTSEntry(UppaalEnvironmentInterface& env) : _environment(env)
-{
-}
+MCTSEntry::MCTSEntry(UppaalEnvironmentInterface &env) : _environment(env) {}
 
-
-bool MCTSEntry::run()
-{
+bool MCTSEntry::run() {
     UCT_PTA uct = UCT_PTA(_environment);
 
     uct.run(time_limit_sec);
 
-
     terminalNodeScores = uct.getBestTerminalNodeScore();
 
-    if(terminalNodeScores.empty()){
+    if (terminalNodeScores.empty()) {
         std::cout << "No terminal node was found in the compute time given." << std::endl;
     } else {
         auto termNode = terminalNodeScores.back();
@@ -32,18 +27,18 @@ bool MCTSEntry::run()
     return true;
 }
 
-int MCTSEntry::count_states(std::shared_ptr<SearchNode> &root) {
+int MCTSEntry::count_states(std::shared_ptr<ExtendedSearchNode> &root) {
 
     int count = 1;
 
-    std::queue<std::shared_ptr<SearchNode>> nodeQueue{};
-    std::shared_ptr<SearchNode>& currentNode = root;
+    std::queue<std::shared_ptr<ExtendedSearchNode>> nodeQueue{};
+    std::shared_ptr<ExtendedSearchNode> &currentNode = root;
 
-    while (count == 1 || !nodeQueue.empty()){
+    while (count == 1 || !nodeQueue.empty()) {
         auto children = currentNode->child_nodes;
-        for(auto& child : children){
-            nodeQueue.push(child);
-            count ++;
+        for (auto &child : children) {
+            nodeQueue.push(std::static_pointer_cast<ExtendedSearchNode>(child));
+            count++;
         }
 
         currentNode = nodeQueue.front();
@@ -53,8 +48,7 @@ int MCTSEntry::count_states(std::shared_ptr<SearchNode> &root) {
     return count;
 }
 
-
-bool MCTSEntry::bfs(){
+bool MCTSEntry::bfs() {
 
     std::queue<State> stateQueue{};
     State currentState = _environment.GetStartState();
@@ -63,16 +57,16 @@ bool MCTSEntry::bfs(){
     long max_time = time_limit_sec;
     long max_timeLeft = max_time;
 
-    while (max_timeLeft > 0){
+    while (max_timeLeft > 0) {
 
         std::vector<State> unvisited_child_states = _environment.GetValidChildStates(currentState);
-        for (const auto & unvisited_child_state : unvisited_child_states) {
+        for (const auto &unvisited_child_state : unvisited_child_states) {
             stateQueue.push(unvisited_child_state);
         }
 
-        if(_environment.IsTerminal(currentState)){
+        if (_environment.IsTerminal(currentState)) {
             Reward termReward = _environment.EvaluateRewardFunction(currentState);
-            if (terminalNodeScores.empty() || terminalNodeScores.back().score < termReward){
+            if (terminalNodeScores.empty() || terminalNodeScores.back().score < termReward) {
                 auto newBestNode = TerminalNodeScore();
                 newBestNode.score = termReward;
                 newBestNode.node = nullptr;
@@ -88,7 +82,7 @@ bool MCTSEntry::bfs(){
         max_timeLeft = max_time - (time(nullptr) - max_start);
     }
 
-    if(terminalNodeScores.empty()){
+    if (terminalNodeScores.empty()) {
         std::cout << "No terminal node was found in the compute time given." << std::endl;
     } else {
         auto termNode = terminalNodeScores.back();
@@ -111,7 +105,7 @@ bool MCTSEntry::dfs() {
 
     State currentState = nullptr;
 
-    while (max_timeLeft > 0){
+    while (max_timeLeft > 0) {
 
         std::vector<State> unvisited_child_states = _environment.GetValidChildStates(rootState);
         bool isTerminal = false;
@@ -130,9 +124,9 @@ bool MCTSEntry::dfs() {
 
         states_unrolled = 0;
 
-        if(isTerminal){
+        if (isTerminal) {
             Reward termReward = _environment.EvaluateRewardFunction(currentState);
-            if (terminalNodeScores.empty() || terminalNodeScores.back().score < termReward){
+            if (terminalNodeScores.empty() || terminalNodeScores.back().score < termReward) {
                 auto newBestNode = TerminalNodeScore();
                 newBestNode.score = termReward;
                 newBestNode.node = nullptr;
@@ -145,7 +139,7 @@ bool MCTSEntry::dfs() {
         max_timeLeft = max_time - (time(nullptr) - max_start);
     }
 
-    if(terminalNodeScores.empty()){
+    if (terminalNodeScores.empty()) {
         std::cout << "No terminal node was found in the compute time given." << std::endl;
     } else {
         auto termNode = terminalNodeScores.back();
@@ -154,22 +148,19 @@ bool MCTSEntry::dfs() {
     return true;
 }
 
-
-void MCTSEntry::dfsLoop(State& currentState, int levels){
-
-
+void MCTSEntry::dfsLoop(State &currentState, int levels) {
 
     std::vector<State> unvisited_child_states = _environment.GetValidChildStates(currentState);
     for (auto unvisited_child_state : unvisited_child_states) {
-        dfsLoop(unvisited_child_state, levels+1);
+        dfsLoop(unvisited_child_state, levels + 1);
     }
 }
 
-std::vector<State> MCTSEntry::compute_state_trace(const std::shared_ptr<SearchNode>& endNode) {
+std::vector<State> MCTSEntry::compute_state_trace(const std::shared_ptr<SearchNode> &endNode) {
     std::vector<State> trace{endNode->state};
 
     auto current_node = endNode->parent;
-    while(current_node->parent){
+    while (current_node->parent) {
         trace.insert(trace.begin(), current_node->state);
         current_node = current_node->parent;
     }
