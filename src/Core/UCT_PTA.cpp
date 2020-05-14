@@ -270,7 +270,7 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<Exten
             bool allChildrenExplored = visitedBoundRangeSize == bound_range;
 
             double percentageVisited = (double)visitedBoundRangeSize / (bound_range + DBL_MIN);
-            bool explore = visitedBoundRangeSize <= 10 && percentageVisited < 0.3;
+            bool explore = percentageVisited < 0.3;  // &visitedBoundRangeSize <= 10 && 
 
             if (!allChildrenExplored && explore) {
                 auto expandedNode = m_expand_delays(current_node);
