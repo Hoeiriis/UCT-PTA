@@ -34,7 +34,7 @@ State UCT_PTA::run(int n_searches) {
     m_root->set_unvisited_child_states(unvisited_child_states);
 
     // rough bootstrap of reward scaling
-    std::vector<double> rewards(100, 0);
+    std::vector<double> rewards(500, 0);
     for (int i = 0; i < rewards.size(); ++i) {
         Reward score = m_default_policy(m_root->state);
         rewards.at(i) = score;
