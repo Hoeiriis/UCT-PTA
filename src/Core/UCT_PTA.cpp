@@ -26,7 +26,7 @@ State UCT_PTA::run(int n_searches) {
     time_t max_start = time(nullptr);
     long max_time = n_searches;
     long max_timeLeft = max_time;
-    long nodes_expanded = 0;
+    long _expanded = 0;
 
     State initial_state = _environment.GetStartState();
     root_node = ExtendedSearchNode::create_ExtendedSearchNode(nullptr, initial_state, false, true);
@@ -68,7 +68,7 @@ State UCT_PTA::run(int n_searches) {
                 newBestNode.score = termReward;
                 newBestNode.node = expandedNode;
                 newBestNode.time_to_find = (time(nullptr) - max_start);
-                newBestNode.nodes_expanded = nodes_expanded;
+                newBestNode.nodes_expanded = _expanded;
                 // insert at beginning
                 bestTerminalNodesFound.push_back(newBestNode);
             }
@@ -77,7 +77,7 @@ State UCT_PTA::run(int n_searches) {
 
         // update maxTime
         max_timeLeft = max_time - (time(nullptr) - max_start);
-        nodes_expanded += 1;
+        _expanded += 1;
     }
 
     if (bestTerminalNodesFound.empty()) {

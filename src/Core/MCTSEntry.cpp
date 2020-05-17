@@ -21,7 +21,7 @@ bool MCTSEntry::run() {
     } else {
         auto termNode = terminalNodeScores.back();
         state_trace = compute_state_trace(termNode.node);
-        states_explored = termNode.nodes_expanded;
+        states_explored = count_states(uct.root_node);
     }
 
     return true;
