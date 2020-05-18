@@ -25,8 +25,9 @@ class TerminalNodeScore {
 
 class UCT_PTA : public MCTSInterface {
     public:
-        explicit UCT_PTA(EnvironmentInterface &environment);
-        State run(int n_searches) override;
+        UCT_PTA(EnvironmentInterface &environment, int unrolledStatesLimit);
+        State run(int n_searches);
+        State run(int n_searches, int boostrapLimit);
         inline EnvironmentInterface &getEnvironment() override { return _environment; }
         inline std::vector<TerminalNodeScore> &getBestTerminalNodeScore() { return bestTerminalNodesFound; }
 
@@ -34,6 +35,7 @@ class UCT_PTA : public MCTSInterface {
 
         std::mt19937 generator;
 
+        virtual ~UCT_PTA();
 
 
 protected:

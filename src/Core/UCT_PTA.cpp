@@ -7,9 +7,9 @@
 #include <cfloat>
 #include <cmath>
 
-UCT_PTA::UCT_PTA(EnvironmentInterface &environment)
+UCT_PTA::UCT_PTA(EnvironmentInterface &environment, int unrolledStatesLimit)
     : _environment(environment), generator(std::mt19937(time(nullptr))),
-      _defaultPolicy(UPPAAL_RandomSamplingDefaultPolicy(_environment)),
+      _defaultPolicy(UPPAAL_RandomSamplingDefaultPolicy(_environment, unrolledStatesLimit)),
       root_node(SearchNode::create_SearchNode(nullptr, false)) {
     // UCT TreePolicy setup
     std::function<std::shared_ptr<SearchNode>(std::shared_ptr<SearchNode>)> f_expand =
@@ -21,7 +21,7 @@ UCT_PTA::UCT_PTA(EnvironmentInterface &environment)
     _tpolicy = UCT_TreePolicy(f_expand, f_best_child);
 }
 
-State UCT_PTA::run(int n_searches) {
+State UCT_PTA::run(int n_searches, int bootstrapLimit) {
 
     time_t max_start = time(nullptr);
     long max_time = n_searches;
@@ -34,7 +34,7 @@ State UCT_PTA::run(int n_searches) {
     m_root->set_unvisited_child_states(unvisited_child_states);
 
     // rough bootstrap of reward scaling
-    std::vector<double> rewards(500, 0);
+    std::vector<double> rewards(bootstrapLimit, 0);
     for (int i = 0; i < rewards.size(); ++i) {
         Reward score = m_default_policy(m_root->state);
         rewards.at(i) = score;
