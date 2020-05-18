@@ -3,6 +3,7 @@
 //
 
 #include <ExtendedSearchNode.h>
+#include <MCTSEntry.h>
 #include <UCT_PTA.h>
 #include <cassert>
 #include <cfloat>
@@ -10,9 +11,9 @@
 #include <tuple>
 #include <utility>
 
-UCT_PTA::UCT_PTA(UppaalEnvironmentInterface &environment)
+UCT_PTA::UCT_PTA(UppaalEnvironmentInterface &environment, int unrolledStatesLimit)
     : _environment(environment), generator(std::mt19937(time(nullptr))),
-      _defaultPolicy(DelaySamplingDefaultPolicy(_environment)),
+      _defaultPolicy(DelaySamplingDefaultPolicy(_environment, unrolledStatesLimit)),
       root_node(ExtendedSearchNode::create_ExtendedSearchNode(nullptr, false, true)) {
     /** UCT TreePolicy setup
     std::function<std::shared_ptr<ExtendedSearchNode>(std::shared_ptr<ExtendedSearchNode>)> f_expand =
@@ -22,7 +23,7 @@ UCT_PTA::UCT_PTA(UppaalEnvironmentInterface &environment)
             std::bind(&UCT_PTA::m_best_child, this, std::placeholders::_1, std::placeholders::_2); **/
 }
 
-State UCT_PTA::run(int n_searches) {
+State UCT_PTA::run(int n_searches, int exploreLimitAbs, double exploreLimitPercent, int bootstrapLimit) {
     time_t max_start = time(nullptr);
     long max_time = n_searches;
     long max_timeLeft = max_time;
@@ -32,11 +33,12 @@ State UCT_PTA::run(int n_searches) {
     root_node = ExtendedSearchNode::create_ExtendedSearchNode(nullptr, initial_state, false, true);
     root_node->bounds = _environment.GetDelayBounds(initial_state);
 
-    bootstrap_reward_scaling();
+    bootstrap_reward_scaling(bootstrapLimit);
 
     while (!best_proved && max_timeLeft > 0) {
         // TreePolicy runs to find an unexpanded node to expand
-        std::shared_ptr<ExtendedSearchNode> expandedNode = m_tree_policy(root_node);
+        std::shared_ptr<ExtendedSearchNode> expandedNode =
+            m_tree_policy(root_node, exploreLimitPercent, exploreLimitAbs);
 
         // From the expanded node, a simulation runs that returns a score
         std::vector<double> sim_scores(1, 0);
@@ -87,10 +89,10 @@ State UCT_PTA::run(int n_searches) {
     }
 }
 
-void UCT_PTA::bootstrap_reward_scaling() {
+void UCT_PTA::bootstrap_reward_scaling(int bootstrapLimit) {
     // rough bootstrap of reward scaling
-    std::vector<double> rewards(100, 0);
-    for (int i = 0; i < 100; ++i) {
+    std::vector<double> rewards(bootstrapLimit, 0);
+    for (int i = 0; i < rewards.size() ; ++i) {
         Reward score = m_default_policy(root_node->state);
         rewards.at(i) = score;
     }
@@ -247,7 +249,8 @@ void UCT_PTA::m_backpropagation(const std::shared_ptr<ExtendedSearchNode> &node,
     return _backup.backup(node, score);
 }
 
-std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<ExtendedSearchNode> node) {
+std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<ExtendedSearchNode> node,
+                                                           double exploreLimitPercent, int exploreLimitAbs) {
 
     std::shared_ptr<ExtendedSearchNode> current_node = std::move(node);
 
@@ -270,7 +273,7 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<Exten
             bool allChildrenExplored = visitedBoundRangeSize == bound_range;
 
             double percentageVisited = (double)visitedBoundRangeSize / (bound_range + DBL_MIN);
-            bool explore = percentageVisited < 0.3;  // &visitedBoundRangeSize <= 10 && 
+            bool explore = percentageVisited <= exploreLimitPercent && visitedBoundRangeSize <= exploreLimitAbs;
 
             if (!allChildrenExplored && explore) {
                 auto expandedNode = m_expand_delays(current_node);
