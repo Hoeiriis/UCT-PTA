@@ -26,12 +26,13 @@ State UCT_PTA::run(int n_searches) {
     time_t max_start = time(nullptr);
     long max_time = n_searches;
     long max_timeLeft = max_time;
-    long _expanded = 0;
+    _expanded = 0;
 
     State initial_state = _environment.GetStartState();
     std::vector<State> unvisited_child_states = _environment.GetValidChildStates(initial_state);
     m_root = SearchNode::create_SearchNode(nullptr, initial_state, false);
     m_root->set_unvisited_child_states(unvisited_child_states);
+    root_node = m_root;
 
     // rough bootstrap of reward scaling
     std::vector<double> rewards(500, 0);
@@ -44,43 +45,51 @@ State UCT_PTA::run(int n_searches) {
     rewardMinMax.first = *it.first;
     rewardMinMax.second = *it.second;
 
-    while (!best_proved && max_timeLeft > 0) {
+    while (!best_proved && max_timeLeft > 0 && !m_root->isTerminalState) {
         // TreePolicy runs to find an unexpanded node to expand
-        auto expandedNode = m_tree_policy(m_root);
-        // From the expanded node, a simulation runs that returns a score
-        Reward simulation_score = m_default_policy(expandedNode->state);
+        for(int iter = 0; iter < 5000; iter++)
+        {
+            auto expandedNode = m_tree_policy(m_root);
+            // From the expanded node, a simulation runs that returns a score
+            Reward simulation_score = m_default_policy(expandedNode->state);
 
-        // eventually update min max reward
-        if (simulation_score < rewardMinMax.first) {
-            rewardMinMax.first = simulation_score;
-        } else if (simulation_score > rewardMinMax.second) {
-            rewardMinMax.second = simulation_score;
-        }
-        
-        // normalize data
-        double norm_score = (simulation_score - rewardMinMax.first) / (rewardMinMax.second - rewardMinMax.first);
-
-        // The score is backpropagated up through the search tree
-        m_backpropagation(expandedNode, norm_score);
-
-        // if new terminal node is encountered, update the bestTerminalNode
-        if (expandedNode->isTerminalState) {
-            Reward termReward = _environment.EvaluateRewardFunction(expandedNode->state);
-            if (bestTerminalNodesFound.empty() || bestTerminalNodesFound.back().score < termReward) {
-                auto newBestNode = TerminalNodeScore();
-                newBestNode.score = termReward;
-                newBestNode.node = expandedNode;
-                newBestNode.time_to_find = (time(nullptr) - max_start);
-                newBestNode.nodes_expanded = _expanded;
-                // insert at beginning
-                bestTerminalNodesFound.push_back(newBestNode);
+            // eventually update min max reward
+            if (simulation_score < rewardMinMax.first) {
+                rewardMinMax.first = simulation_score;
+            } else if (simulation_score > rewardMinMax.second) {
+                rewardMinMax.second = simulation_score;
             }
-            expandedNode->score = {-100000, 0};
+
+            // normalize data
+            double norm_score = (simulation_score - rewardMinMax.first) / (rewardMinMax.second - rewardMinMax.first);
+
+            // The score is backpropagated up through the search tree
+            m_backpropagation(expandedNode, norm_score);
+
+            // if new terminal node is encountered, update the bestTerminalNode
+            if (expandedNode->isTerminalState) {
+                // update maxTime
+                max_timeLeft = max_time - (time(nullptr) - max_start);
+
+                Reward termReward = _environment.EvaluateRewardFunction(expandedNode->state);
+                if (bestTerminalNodesFound.empty() || bestTerminalNodesFound.back().score < termReward) {
+                    auto newBestNode = TerminalNodeScore();
+                    newBestNode.score = termReward;
+                    newBestNode.node = expandedNode;
+                    newBestNode.time_to_find = (time(nullptr) - max_start);
+                    newBestNode.nodes_expanded = _expanded;
+                    // insert at beginning
+                    bestTerminalNodesFound.push_back(newBestNode);
+                }
+                expandedNode->score = {-100000, 0};
+            }
+            _expanded += 1;
         }
+
+        m_root = m_best_child(m_root, 0);
 
         // update maxTime
         max_timeLeft = max_time - (time(nullptr) - max_start);
-        _expanded += 1;
     }
 
     root_node = m_root;

@@ -29,6 +29,7 @@ class UCT_PTA : public MCTSInterface {
         State run(int n_searches) override;
         inline EnvironmentInterface &getEnvironment() override { return _environment; }
         inline std::vector<TerminalNodeScore> &getBestTerminalNodeScore() { return bestTerminalNodesFound; }
+        long _expanded;
 
         std::shared_ptr<SearchNode> root_node;
 

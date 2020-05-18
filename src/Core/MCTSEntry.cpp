@@ -22,11 +22,11 @@ bool MCTSEntry::run()
 
     if(terminalNodeScores.empty()){
         std::cout << "No terminal node was found in the compute time given." << std::endl;
-        states_explored = count_states(uct.root_node);
+        states_explored = uct._expanded;
     } else {
         auto termNode = terminalNodeScores.back();
-        state_trace = compute_state_trace(termNode.node);
-        states_explored = count_states(uct.root_node);
+        //state_trace = compute_state_trace(termNode.node);
+        states_explored = uct._expanded;
     }
 
     return true;
