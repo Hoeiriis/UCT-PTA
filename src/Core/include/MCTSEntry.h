@@ -26,7 +26,7 @@ public:
     bool dfs();
     int time_limit_sec = 10;
     long states_explored = 0;
-
+    //exploreLimits not used in old time handling version
     int exploreLimitAbs;
     double exploreLimitPercent;
     int unrolledStatesLimit;
