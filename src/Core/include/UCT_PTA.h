@@ -25,7 +25,7 @@ class TerminalNodeScore {
 
 class UCT_PTA : public MCTSInterface {
     public:
-        explicit UCT_PTA(EnvironmentInterface &environment); 
+        //explicit UCT_PTA(EnvironmentInterface &environment); 
         explicit UCT_PTA(EnvironmentInterface &environment, int unrolledStatesLimit);
         State run(int n_searches) override {};
         State run(int n_searches, int boostrapLimit);
@@ -36,7 +36,6 @@ class UCT_PTA : public MCTSInterface {
 
         std::mt19937 generator;
 
-        virtual ~UCT_PTA();
 
 
 protected:
