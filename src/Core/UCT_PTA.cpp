@@ -7,9 +7,9 @@
 #include <cfloat>
 #include <cmath>
 
-UCT_PTA::UCT_PTA(UppaalEnvironmentInterface &environment)
+UCT_PTA::UCT_PTA(UppaalEnvironmentInterface &environment, int unrolledStatesLimit)
     : _environment(environment), generator(std::mt19937(time(nullptr))),
-      _defaultPolicy(DelaySamplingDefaultPolicy(_environment)),
+      _defaultPolicy(DelaySamplingDefaultPolicy(_environment, unrolledStatesLimit)),
       root_node(SearchNode::create_SearchNode(nullptr, false)) {
     // UCT TreePolicy setup
     std::function<std::shared_ptr<SearchNode>(std::shared_ptr<SearchNode>)> f_expand =
@@ -21,7 +21,7 @@ UCT_PTA::UCT_PTA(UppaalEnvironmentInterface &environment)
     _tpolicy = UCT_TreePolicy(f_expand, f_best_child);
 }
 
-State UCT_PTA::run(int n_searches) {
+State UCT_PTA::run(int n_searches, int exploreLimitAbs, double exploreLimitPercent, int bootstrapLimit) {
     time_t max_start = time(nullptr);
     long max_time = n_searches;
     long max_timeLeft = max_time;
@@ -29,23 +29,15 @@ State UCT_PTA::run(int n_searches) {
 
     State initial_state = _environment.GetStartState();
     std::vector<State> unvisited_child_states = _environment.GetValidChildStates(initial_state);
-    m_root = SearchNode::create_SearchNode(nullptr, initial_state, false);
-    m_root->set_unvisited_child_states(unvisited_child_states);
+    root_node = SearchNode::create_SearchNode(nullptr, initial_state, false);
+    root_node->set_unvisited_child_states(unvisited_child_states);
 
     // rough bootstrap of reward scaling
-    std::vector<double> rewards(100, 0);
-    for (int i = 0; i < rewards.size() ; ++i) {
-        Reward score = m_default_policy(m_root->state);
-        rewards.at(i) = score;
-    }
-
-    auto it = std::minmax_element(std::begin(rewards), std::end(rewards));
-    rewardMinMax.first = *it.first;
-    rewardMinMax.second = *it.second;
-
+    bootstrap_reward_scaling(bootstrapLimit);
+    
     while (!best_proved && max_timeLeft > 0) {
         // TreePolicy runs to find an unexpanded node to expand
-        auto expandedNode = m_tree_policy(m_root);
+        auto expandedNode = m_tree_policy(root_node);
         // From the expanded node, a simulation runs that returns a score
         std::vector<double> sim_scores(1, 0);
         for (int i = 0; i < sim_scores.size() ; ++i) {
@@ -88,8 +80,6 @@ State UCT_PTA::run(int n_searches) {
         _expanded += 1;
     }
 
-    root_node = m_root;
-
     if (bestTerminalNodesFound.empty()) {
         return nullptr;
     } else {
@@ -97,7 +87,22 @@ State UCT_PTA::run(int n_searches) {
     }
 }
 
+void UCT_PTA::bootstrap_reward_scaling(int bootstrapLimit) {
+    // rough bootstrap of reward scaling
+    std::vector<double> rewards(bootstrapLimit, 0);
+    for (int i = 0; i < rewards.size() ; ++i) {
+        Reward score = m_default_policy(root_node->state);
+        rewards.at(i) = score;
+    }
+
+    auto it = std::minmax_element(std::begin(rewards), std::end(rewards));
+    rewardMinMax.first = *it.first;
+    rewardMinMax.second = *it.second;
+}
+
+
 std::shared_ptr<SearchNode> UCT_PTA::m_best_child(std::shared_ptr<SearchNode> node, double c) {
+
     auto best_score_so_far = std::numeric_limits<double>::lowest();
     std::vector<double> score_list = {};
 

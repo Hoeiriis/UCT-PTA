@@ -25,9 +25,11 @@ class TerminalNodeScore {
 
 class UCT_PTA : public MCTSInterface {
   public:
-    explicit UCT_PTA(UppaalEnvironmentInterface &environment);
-    State run(int n_searches) override;
-    inline UppaalEnvironmentInterface &getEnvironment() override { return _environment; }
+    //explicit UCT_PTA(UppaalEnvironmentInterface &environment);
+    explicit UCT_PTA(UppaalEnvironmentInterface &environment, int unrolledStatesLimit);
+    State run(int n_searches) override {};
+    State run(int n_searches, int exploreLimitAbs, double exploreLimitPercent, int boostrapLimit);
+    inline UppaalEnvironmentInterface &getEnvironment() { return _environment; }
     inline std::vector<TerminalNodeScore> &getBestTerminalNodeScore() { return bestTerminalNodesFound; }
     std::shared_ptr<SearchNode> root_node;
 
@@ -39,6 +41,7 @@ class UCT_PTA : public MCTSInterface {
     std::shared_ptr<SearchNode> m_tree_policy(std::shared_ptr<SearchNode> node) override;
     std::shared_ptr<SearchNode> m_best_child(std::shared_ptr<SearchNode> node, double c) override;
     std::shared_ptr<SearchNode> m_expand(std::shared_ptr<SearchNode> node) override;
+    void bootstrap_reward_scaling(int bootstrapLimit);
     void m_backpropagation(std::shared_ptr<SearchNode> node, Reward score) override;
 
     UppaalEnvironmentInterface &_environment;

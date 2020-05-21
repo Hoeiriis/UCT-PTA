@@ -7,13 +7,14 @@
 
 class DelaySamplingDefaultPolicy : DefaultPolicyBase {
   public:
-    explicit DelaySamplingDefaultPolicy(UppaalEnvironmentInterface &environment);
+    explicit DelaySamplingDefaultPolicy(UppaalEnvironmentInterface &environment, int unrolledStatesLimit);
 
     Reward defaultPolicy(State) override;
     std::tuple<State, bool, bool> findDelayedState(State &state, UppaalEnvironmentInterface &_environment);
 
   private:
     std::vector<State> validStates;
+    int unrolledStatesLimit;
 };
 
 #endif // UCTPTA_LIBRARY_DELAYSAMPLINGDEFAULTPOLICY_H

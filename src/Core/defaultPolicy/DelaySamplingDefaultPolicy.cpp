@@ -3,8 +3,8 @@
 #include <set>
 #include <vector>
 
-DelaySamplingDefaultPolicy::DelaySamplingDefaultPolicy(UppaalEnvironmentInterface &environment)
-    : DefaultPolicyBase(environment){};
+DelaySamplingDefaultPolicy::DelaySamplingDefaultPolicy(UppaalEnvironmentInterface &environment, int unrolledStatesLimit)
+    : DefaultPolicyBase(environment), unrolledStatesLimit(unrolledStatesLimit){};
 
 /**
  * Performs a PTA simulation by involving a (randomly chosen) delay of a state before it samples for its valid child
@@ -23,7 +23,7 @@ Reward DelaySamplingDefaultPolicy::defaultPolicy(State state) {
     bool isTerminal = _environment.IsTerminal(state);
     bool delayFound = false;
 
-    while (states_unrolled < 50 && (!validChildStates.empty()) && (!isTerminal)) {
+    while (states_unrolled < unrolledStatesLimit && (!validChildStates.empty()) && (!isTerminal)) {
         // Part 1: Randomly picking a delayed state
         // std::cout << "Delaying " << states_unrolled << "th delay..." << std::endl;
         std::tie(delayedState, delayFound, isTerminal) =
@@ -79,8 +79,8 @@ std::tuple<State, bool, bool> DelaySamplingDefaultPolicy::findDelayedState(State
                 return std::make_tuple(State(nullptr), false, false);
             }
             rndDelay = lowerDelayBound;
-        // If bounds are different and the lower bound is 0 choose the upper one
-        } else if (lowerDelayBound == 0) {    
+            // If bounds are different and the lower bound is 0 choose the upper one
+        } else if (lowerDelayBound == 0) {
             rndDelay = upperDelayBound;
             // Otherwise choose uniformly with 30% chance of choosing one of the bounds
         } else {
