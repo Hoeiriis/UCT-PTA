@@ -63,7 +63,7 @@ Reward DelaySamplingDefaultPolicy::defaultPolicy(State state) {
 std::tuple<State, bool, bool> DelaySamplingDefaultPolicy::findDelayedState(State &state,
                                                                            UppaalEnvironmentInterface &_environment) {
     State delayedState = State(nullptr);
-    int p, rndDelay;
+    int p, rnd, rndDelay;
 
     std::pair<int, int> delayBounds = _environment.GetDelayBounds(state);
     int lowerDelayBound = (int)(delayBounds).first;
@@ -77,7 +77,13 @@ std::tuple<State, bool, bool> DelaySamplingDefaultPolicy::findDelayedState(State
         p = uniformIntDistribution1(generator);
         // If there is are only bounds to choose between
         if (upperDelayBound - lowerDelayBound - 1 == 0 || p <= 3) {
-            rndDelay = lowerDelayBound;
+            std::uniform_int_distribution<int> uniformRand(1, 2);
+            rnd = uniformRand(generator);
+            if (rnd % 2 == 0) {
+                rndDelay = lowerDelayBound;
+            } else {
+                rndDelay = upperDelayBound;
+            }
         } else {
             std::uniform_int_distribution<int> uniformIntDistribution2(lowerDelayBound + 1, upperDelayBound - 1);
             rndDelay = uniformIntDistribution2(generator);
