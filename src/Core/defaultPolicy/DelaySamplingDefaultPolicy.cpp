@@ -80,9 +80,6 @@ std::tuple<State, bool, bool> DelaySamplingDefaultPolicy::findDelayedState(State
             }
             rndDelay = lowerDelayBound;
             // If bounds are different and the lower bound is 0 choose the upper one
-        } else if (lowerDelayBound == 0) {
-            rndDelay = upperDelayBound;
-            // Otherwise choose uniformly with 30% chance of choosing one of the bounds
         } else {
             p = uniformIntDistribution1(generator);
             // If there is are only bounds to choose between
