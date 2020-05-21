@@ -14,14 +14,8 @@
 UCT_PTA::UCT_PTA(UppaalEnvironmentInterface &environment, int unrolledStatesLimit)
     : _environment(environment), generator(std::mt19937(time(nullptr))),
       _defaultPolicy(DelaySamplingDefaultPolicy(_environment, unrolledStatesLimit)),
-      root_node(ExtendedSearchNode::create_ExtendedSearchNode(nullptr, false, true)) {
-    /** UCT TreePolicy setup
-    std::function<std::shared_ptr<ExtendedSearchNode>(std::shared_ptr<ExtendedSearchNode>)> f_expand =
-            std::bind(&UCT_PTA::m_expand, this, std::placeholders::_1);
-
-    std::function<std::shared_ptr<ExtendedSearchNode>(std::shared_ptr<ExtendedSearchNode>, double)> f_best_child =
-            std::bind(&UCT_PTA::m_best_child, this, std::placeholders::_1, std::placeholders::_2); **/
-}
+      exponentialDistribution(std::exponential_distribution<double>(3.5)),
+      root_node(ExtendedSearchNode::create_ExtendedSearchNode(nullptr, false, true)) {}
 
 State UCT_PTA::run(int n_searches, int exploreLimitAbs, double exploreLimitPercent, int bootstrapLimit) {
     time_t max_start = time(nullptr);
@@ -199,7 +193,16 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_delays(std::shared_ptr<Ext
 }
 
 int UCT_PTA::get_random_int_except(int lower, int upper, std::vector<int> &exceptions) {
-    std::uniform_int_distribution<int> uniformIntDistribution(0, upper - lower - exceptions.size());
+    /*
+    double rnd;
+
+    do
+        { rnd = exponentialDistribution(generator); }
+    while (rnd > 1);
+
+    int i_random = (int)(rnd*(upper - lower - exceptions.size()));
+    */
+    std::uniform_int_distribution<int> uniformIntDistribution = std::uniform_int_distribution<int>(0, upper - lower - exceptions.size());
     int i_random = uniformIntDistribution(generator);
 
     std::sort(exceptions.begin(), exceptions.end());
@@ -273,7 +276,7 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<Exten
             bool allChildrenExplored = visitedBoundRangeSize == bound_range;
 
             double percentageVisited = (double)visitedBoundRangeSize / (bound_range + DBL_MIN);
-            bool explore = percentageVisited <= exploreLimitPercent && visitedBoundRangeSize <= exploreLimitAbs;
+            bool explore = percentageVisited <= exploreLimitPercent; // && visitedBoundRangeSize <= exploreLimitAbs;
 
             if (!allChildrenExplored && explore) {
                 auto expandedNode = m_expand_delays(current_node);

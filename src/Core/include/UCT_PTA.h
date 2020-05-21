@@ -46,6 +46,7 @@ class UCT_PTA {
     void m_backpropagation(const std::shared_ptr<ExtendedSearchNode> &node, Reward score);
     void bootstrap_reward_scaling(int bootstrapLimit);
     int get_random_int_except(int lower, int upper, std::vector<int> &exceptions);
+    std::exponential_distribution<double> exponentialDistribution;
 
     bool best_proved = false;
     UppaalEnvironmentInterface &_environment;
