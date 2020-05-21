@@ -37,7 +37,7 @@ Reward DelaySamplingDefaultPolicy::defaultPolicy(State state) {
         }
         // Part2: Randomly picking next state from children states
         validChildStates = ((UppaalEnvironmentInterface &)_environment).GetValidChildStatesNoDelay(state);
-        // uniformly choose one of the found children
+        // randomly choose next state
         std::uniform_int_distribution<int> uniformIntDistribution2(0, validChildStates.size() - 1);
         i_random = uniformIntDistribution2(generator);
         state = validChildStates[i_random];
@@ -51,7 +51,7 @@ Reward DelaySamplingDefaultPolicy::defaultPolicy(State state) {
 }
 
 /**
- *tu
+ *
  * @param state a state being delayed
  * @param _environment environment with defined delay contex
  * @return tuple <state delayedState,bool isFound,bool isTerminal> contains delayed state, flag if there is one found
@@ -59,12 +59,9 @@ Reward DelaySamplingDefaultPolicy::defaultPolicy(State state) {
  */
 std::tuple<State, bool, bool> DelaySamplingDefaultPolicy::findDelayedState(State &state,
                                                                            UppaalEnvironmentInterface &_environment) {
-    std::set<int> exploredDelays;
     State delayedState = State(nullptr);
     int p, rndDelay;
     bool validDelayFound = false;
-    std::uniform_int_distribution<int> uniformIntDistribution1(1, 10);
-    srand(time(NULL));
 
     std::pair<int, int> delayBounds = _environment.GetDelayBounds(state);
     int lowerDelayBound = (int)(delayBounds).first;
@@ -79,24 +76,18 @@ std::tuple<State, bool, bool> DelaySamplingDefaultPolicy::findDelayedState(State
                 return std::make_tuple(State(nullptr), false, false);
             }
             rndDelay = lowerDelayBound;
-            // If bounds are different and the lower bound is 0 choose the upper one
         } else {
+            std::uniform_int_distribution<int> uniformIntDistribution1(1, 10);
             p = uniformIntDistribution1(generator);
             // If there is are only bounds to choose between
             if (upperDelayBound - lowerDelayBound - 1 == 0 || p <= 3) {
-                if (rand() % 2 == 0) {
-                    rndDelay = lowerDelayBound;
-                } else {
-                    rndDelay = upperDelayBound;
-                }
+                rndDelay = lowerDelayBound;
             } else {
                 std::uniform_int_distribution<int> uniformIntDistribution2(lowerDelayBound + 1, upperDelayBound - 1);
                 rndDelay = uniformIntDistribution2(generator);
             }
         }
-
         // Fetch the delayed state
-        // std::cout << "Delaying state by " << rndDelay << std::endl;
         delayedState = (_environment.DelayState(state, rndDelay)).first;
         // check if delayed state is terminal
         if (_environment.IsTerminal(delayedState)) {
