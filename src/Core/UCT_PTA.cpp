@@ -193,7 +193,6 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_delays(std::shared_ptr<Ext
 }
 
 int UCT_PTA::get_random_int_except(int lower, int upper, std::vector<int> &exceptions) {
-    /*
     double rnd;
 
     do
@@ -201,9 +200,6 @@ int UCT_PTA::get_random_int_except(int lower, int upper, std::vector<int> &excep
     while (rnd > 1);
 
     int i_random = (int)(rnd*(upper - lower - exceptions.size()));
-    */
-    std::uniform_int_distribution<int> uniformIntDistribution = std::uniform_int_distribution<int>(0, upper - lower - exceptions.size());
-    int i_random = uniformIntDistribution(generator);
 
     std::sort(exceptions.begin(), exceptions.end());
 

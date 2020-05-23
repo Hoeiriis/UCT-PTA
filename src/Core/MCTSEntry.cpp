@@ -9,6 +9,7 @@
 MCTSEntry::MCTSEntry(UppaalEnvironmentInterface &env) : _environment(env) {}
 
 bool MCTSEntry::run() {
+    std::cout << "Exponential random. Lambda = 3.5" << std::endl;
     UCT_PTA uct = UCT_PTA(_environment,unrolledStatesLimit);
 
     uct.run(time_limit_sec, exploreLimitAbs, exploreLimitPercent, bootstrapLimit);
