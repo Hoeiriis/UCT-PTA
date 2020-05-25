@@ -10,6 +10,7 @@
 #include <cmath>
 #include <tuple>
 #include <utility>
+#include <algorithm>
 
 UCT_PTA::UCT_PTA(UppaalEnvironmentInterface &environment, int unrolledStatesLimit)
     : _environment(environment), generator(std::mt19937(time(nullptr))),
@@ -147,7 +148,7 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_delays(std::shared_ptr<Ext
     int lower = node->bounds.first;
     int upper = node->bounds.second;
     int delay;
-    int delayRange = std::max((upper) - (lower) + 1, 0);
+    int delayRange = std::max((upper - lower) + (lower == 0 ? 1 : 2), 0); 
     State expanded_state = nullptr;
 
     std::vector<State> unvisitedChildStates{};
@@ -182,7 +183,9 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_delays(std::shared_ptr<Ext
         unvisitedChildStates = _environment.GetValidChildStatesNoDelay(expanded_state);
 
         // Set the delay as visited
-        node->visitedDelays.push_back(delay);
+        auto lb = std::lower_bound(node->visitedDelays.begin(), node->visitedDelays.end(), delay);
+        assert(lb == std::end(node->visitedDelays) || *lb != delay);
+        node->visitedDelays.insert(lb, delay);
 
         // if the newly expanded state has no child state, then we try another delay
     } while (unvisitedChildStates.empty() && (node->visitedDelays.size() != delayRange) && !is_terminal);
@@ -199,13 +202,18 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_delays(std::shared_ptr<Ext
 }
 
 int UCT_PTA::get_random_int_except(int lower, int upper, std::vector<int> &exceptions) {
-    std::uniform_int_distribution<int> uniformIntDistribution(0, upper - lower - exceptions.size());
+    std::uniform_int_distribution<int> uniformIntDistribution(0, (upper - lower - exceptions.size()) + (lower == 0 ? 0 : 1));
     int i_random = uniformIntDistribution(generator);
-
-    std::sort(exceptions.begin(), exceptions.end());
-
     int n_passed = 0;
 
+    
+    if(lower != 0)
+    {
+        if(i_random == 0)
+            return 0;
+        --i_random;
+    }
+    
     for (int exception : exceptions) {
         if (exception <= i_random + lower + n_passed) {
             n_passed += 1;
@@ -306,7 +314,7 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<Exten
 
                 delaysExplored =
                     parent->children_are_delay_actions
-                        ? parent->visitedDelays.size() == (parent->bounds.second - parent->bounds.first) + 1
+                        ? parent->visitedDelays.size() == (parent->bounds.second - parent->bounds.first) + 1 + (parent->bounds.first == 0 ? 0 : 1)
                         : true;
 
             } while (parent->child_nodes.empty() && parent->unvisited_child_states.empty() && delaysExplored);
