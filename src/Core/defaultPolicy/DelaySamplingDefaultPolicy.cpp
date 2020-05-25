@@ -70,33 +70,45 @@ std::tuple<State, bool, bool> DelaySamplingDefaultPolicy::findDelayedState(State
     int lowerDelayBound = (int)(delayBounds).first;
     int upperDelayBound = (int)(delayBounds).second;
 
+    bool zeroTried = false;
+
     // Search for a delayed state with children states , otherwise return null
     while (!validDelayFound) {
-        // Bounds are the same, doesn't matter which we choose
-        if (lowerDelayBound == upperDelayBound) {
-            if (lowerDelayBound == 0) {
-                // std::cout << "No delay for this state (Upper delay bound is 0)" << std::endl;
-                return std::make_tuple(State(nullptr), false, false);
-            }
-            rndDelay = lowerDelayBound;
-            // If bounds are different and the lower bound is 0 choose the upper one
-        } else if (lowerDelayBound == 0) {
-            rndDelay = upperDelayBound;
-            // Otherwise choose uniformly with 30% chance of choosing one of the bounds
-        } else {
-            p = uniformIntDistribution1(generator);
-            // If there is are only bounds to choose between
-            if (upperDelayBound - lowerDelayBound - 1 == 0 || p <= 3) {
-                if (rand() % 2 == 0) {
-                    rndDelay = lowerDelayBound;
-                } else {
-                    rndDelay = upperDelayBound;
+
+        if (!zeroTried)
+        {
+            rndDelay = 0;
+            zeroTried = true;
+        }
+        else
+        {
+            // Bounds are the same, doesn't matter which we choose
+            if (lowerDelayBound == upperDelayBound) {
+                if (lowerDelayBound == 0) {
+                    // std::cout << "No delay for this state (Upper delay bound is 0)" << std::endl;
+                    return std::make_tuple(State(nullptr), false, false);
                 }
+                rndDelay = lowerDelayBound;
+                // If bounds are different and the lower bound is 0 choose the upper one
+            } else if (lowerDelayBound == 0) {
+                rndDelay = upperDelayBound;
+                // Otherwise choose uniformly with 30% chance of choosing one of the bounds
             } else {
-                std::uniform_int_distribution<int> uniformIntDistribution2(lowerDelayBound + 1, upperDelayBound - 1);
-                rndDelay = uniformIntDistribution2(generator);
+                p = uniformIntDistribution1(generator);
+                // If there is are only bounds to choose between
+                if (upperDelayBound - lowerDelayBound - 1 == 0 || p <= 3) {
+                    if (rand() % 2 == 0) {
+                        rndDelay = lowerDelayBound;
+                    } else {
+                        rndDelay = upperDelayBound;
+                    }
+                } else {
+                    std::uniform_int_distribution<int> uniformIntDistribution2(lowerDelayBound + 1, upperDelayBound - 1);
+                    rndDelay = uniformIntDistribution2(generator);
+                }
             }
         }
+
 
         // Fetch the delayed state
         // std::cout << "Delaying state by " << rndDelay << std::endl;

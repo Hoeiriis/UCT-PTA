@@ -35,6 +35,8 @@ State UCT_PTA::run(int n_searches, int exploreLimitAbs, double exploreLimitPerce
 
     bootstrap_reward_scaling(bootstrapLimit);
 
+    std::cerr << "Primariy loop" << std::endl;
+
     while (!best_proved && max_timeLeft > 0) {
         // TreePolicy runs to find an unexpanded node to expand
         std::shared_ptr<ExtendedSearchNode> expandedNode =
@@ -146,20 +148,23 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_delays(std::shared_ptr<Ext
     // choose a delay
     int lower = node->bounds.first;
     int upper = node->bounds.second;
-    int delay;
-    int delayRange = std::max((upper) - (lower) + 1, 0);
+    int delay = 0;
+    int delayRange = std::max((upper) - (lower) + 2, 1);
     State expanded_state = nullptr;
 
     std::vector<State> unvisitedChildStates{};
     bool is_terminal;
 
     do {
-        if (lower == upper) // If they are equal, just choose one of them
+        if (node->visitedDelays.empty())
+        {
+            delay = 0;
+        } else if (lower == upper) // If they are equal, just choose one of them
         {
             delay = lower;
-        } else if (node->visitedDelays.size() < 2) // If size is less than two, the bounds have not been expanded
+        } else if (node->visitedDelays.size() < 3) // If size is less than two, the bounds have not been expanded
         {
-            delay = node->visitedDelays.size() == 1 ? upper : lower;
+            delay = node->visitedDelays.size() < 2 ? upper : lower;
         } else // lastly expand in the range between the bounds
         {
             delay = get_random_int_except(lower, upper, node->visitedDelays);
@@ -260,7 +265,7 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<Exten
             int visitedSize = current_node->visitedDelays.size();
             int lower = current_node->bounds.first;
             int upper = current_node->bounds.second;
-            int n_bounds = lower == upper ? 1 : 2;
+            int n_bounds = lower == upper ? 2 : 3;
 
             // Check if any bound values are unexpanded
             if (visitedSize < n_bounds) {
