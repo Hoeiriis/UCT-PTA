@@ -12,6 +12,7 @@
 #include <UppaalEnvironmentInterface.h>
 #include <functional>
 #include <random>
+#include <UPPAAL_RandomSamplingDefaultPolicy.h>
 
 class TerminalNodeScore {
   public:
@@ -23,9 +24,7 @@ class TerminalNodeScore {
 
 class UCT_PTA {
   public:
-    explicit UCT_PTA(UppaalEnvironmentInterface &environment);
     explicit UCT_PTA(UppaalEnvironmentInterface &environment, int unrolledStatesLimit);
-    State run(int n_searches);
     State run(int n_searches, int exploreLimitAbs, double exploreLimitPercent, int boostrapLimit);
     inline UppaalEnvironmentInterface &getEnvironment() { return _environment; }
     inline std::vector<TerminalNodeScore> &getBestTerminalNodeScore() { return bestTerminalNodesFound; }

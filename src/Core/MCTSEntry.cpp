@@ -15,34 +15,38 @@ bool MCTSEntry::run() {
 
     terminalNodeScores = uct.getBestTerminalNodeScore();
 
+    std::shared_ptr<SearchNode> base_root = std::static_pointer_cast<SearchNode>(uct.root_node);
+
     if (terminalNodeScores.empty()) {
         std::cout << "No terminal node was found in the compute time given." << std::endl;
-        states_explored = count_states(uct.root_node);
+        states_explored = count_states(base_root);
     } else {
         auto termNode = terminalNodeScores.back();
         state_trace = compute_state_trace(termNode.node);
-        states_explored = count_states(uct.root_node);
+        states_explored = count_states(base_root);
     }
 
     return true;
 }
 
-long MCTSEntry::count_states(std::shared_ptr<ExtendedSearchNode> &root) {
+long MCTSEntry::count_states(std::shared_ptr<SearchNode> &root) {
 
     int count = 1;
 
-    std::queue<std::shared_ptr<ExtendedSearchNode>> nodeQueue{};
-    std::shared_ptr<ExtendedSearchNode> &currentNode = root;
+    std::queue<std::shared_ptr<SearchNode>> nodeQueue{};
+    nodeQueue.push(root);
+    std::shared_ptr<SearchNode> &currentNode = root;
 
     while (count == 1 || !nodeQueue.empty()) {
-        auto children = currentNode->child_nodes;
-        for (auto &child : children) {
-            nodeQueue.push(std::static_pointer_cast<ExtendedSearchNode>(child));
-            count++;
-        }
-
         currentNode = nodeQueue.front();
         nodeQueue.pop();
+
+        auto children = currentNode->child_nodes;
+        children = currentNode->child_nodes;
+        for (auto &child : children) {
+            nodeQueue.push(child);
+            count++;
+        }
     }
 
     return count;

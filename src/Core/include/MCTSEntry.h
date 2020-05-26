@@ -31,7 +31,7 @@ class MCTSEntry {
     double exploreLimitPercent;
     int unrolledStatesLimit;
     int bootstrapLimit;
-    long count_states(std::shared_ptr<ExtendedSearchNode> &root);
+    long count_states(std::shared_ptr<SearchNode> &root);
 
     inline std::vector<TerminalNodeScore> getTerminalNodeScores() { return terminalNodeScores; };
 

@@ -60,7 +60,7 @@ State UCT_PTA::run(int n_searches, int exploreLimitAbs, double exploreLimitPerce
         avg_score = std::accumulate(std::begin(sim_scores), std::end(sim_scores), 0.0) / sim_scores.size();
 
         // normalize data
-        double norm_score = (avg_score - rewardMinMax.first) / (rewardMinMax.second - rewardMinMax.first);
+        double norm_score = (avg_score - rewardMinMax.first + DBL_MIN) / (rewardMinMax.second - rewardMinMax.first + DBL_MIN);
         // The score is backpropagated up through the search tree
         m_backpropagation(expandedNode, norm_score);
 
@@ -147,9 +147,8 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_delays(std::shared_ptr<Ext
 
     // choose a delay
     int lower = node->bounds.first;
-    int upper = node->bounds.second;
     int delay = 0;
-    int delayRange = std::max((upper) - (lower) + 2, 1);
+    int possibleDelays = lower == 0 ? 1 : 2;
     State expanded_state = nullptr;
 
     std::vector<State> unvisitedChildStates{};
@@ -159,15 +158,9 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_delays(std::shared_ptr<Ext
         if (node->visitedDelays.empty())
         {
             delay = 0;
-        } else if (lower == upper) // If they are equal, just choose one of them
+        } else
         {
             delay = lower;
-        } else if (node->visitedDelays.size() < 3) // If size is less than two, the bounds have not been expanded
-        {
-            delay = node->visitedDelays.size() < 2 ? upper : lower;
-        } else // lastly expand in the range between the bounds
-        {
-            delay = get_random_int_except(lower, upper, node->visitedDelays);
         }
 
         // delay the nodes state, to get the new child node
@@ -190,16 +183,16 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_delays(std::shared_ptr<Ext
         node->visitedDelays.push_back(delay);
 
         // if the newly expanded state has no child state, then we try another delay
-    } while (unvisitedChildStates.empty() && (node->visitedDelays.size() != delayRange) && !is_terminal);
+    } while (unvisitedChildStates.empty() && (node->visitedDelays.size() < possibleDelays) && !is_terminal);
 
-    if (node->visitedDelays.size() == delayRange && unvisitedChildStates.empty()) {
-        return nullptr;
+    // In case no delays had any child states
+    if (node->visitedDelays.size() == possibleDelays && unvisitedChildStates.empty()) {
+        assert(false); // This should not be possible (in our job-shop and spreadsheet models at least)
     }
 
     std::shared_ptr<ExtendedSearchNode> expanded_node =
-        ExtendedSearchNode::create_ExtendedSearchNode(node, expanded_state, is_terminal, false);
+            ExtendedSearchNode::create_ExtendedSearchNode(node, expanded_state, is_terminal, false);
     expanded_node->set_unvisited_child_states(unvisitedChildStates);
-
     return expanded_node;
 }
 
@@ -262,29 +255,11 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<Exten
     while (!current_node->isTerminalState) {
 
         if (current_node->children_are_delay_actions) {
-            int visitedSize = current_node->visitedDelays.size();
             int lower = current_node->bounds.first;
-            int upper = current_node->bounds.second;
-            int n_bounds = lower == upper ? 2 : 3;
+            int possibleDelays = lower == 0 ? 1 : 2;
 
-            // Check if any bound values are unexpanded
-            if (visitedSize < n_bounds) {
+            if(current_node->visitedDelays.size() < possibleDelays){
                 return m_expand_delays(current_node);
-            }
-
-            int visitedBoundRangeSize = visitedSize - n_bounds;
-            int bound_range = std::max((upper - 1) - (lower + 1) + 1, 0);
-
-            bool allChildrenExplored = visitedBoundRangeSize == bound_range;
-
-            double percentageVisited = (double)visitedBoundRangeSize / (bound_range + DBL_MIN);
-            bool explore = percentageVisited <= exploreLimitPercent && visitedBoundRangeSize <= exploreLimitAbs;
-
-            if (!allChildrenExplored && explore) {
-                auto expandedNode = m_expand_delays(current_node);
-                if (expandedNode != nullptr) {
-                    return expandedNode;
-                }
             }
         }
 
