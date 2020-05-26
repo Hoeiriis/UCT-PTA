@@ -29,9 +29,9 @@ Reward DelaySamplingDefaultPolicy::defaultPolicy(State state) {
         if (validChildStates.empty()) {
             std::pair<int, int> bounds = ((UppaalEnvironmentInterface &)_environment).GetDelayBounds(currentState);
 
-            if(bounds.first == 0) break;
+            if(bounds.second == 0) break;
 
-            currentState = std::move(((UppaalEnvironmentInterface &)_environment).DelayState(currentState, bounds.first).first);
+            currentState = std::move(((UppaalEnvironmentInterface &)_environment).DelayState(currentState, bounds.second).first);
             continue;
         }
 

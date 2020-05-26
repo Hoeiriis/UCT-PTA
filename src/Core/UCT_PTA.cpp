@@ -146,9 +146,9 @@ std::shared_ptr<SearchNode> UCT_PTA::m_best_child(const SearchNode *node, double
 std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_delays(std::shared_ptr<ExtendedSearchNode> node) {
 
     // choose a delay
-    int lower = node->bounds.first;
+    int interestingDelay = node->bounds.second;
     int delay = 0;
-    int possibleDelays = lower == 0 ? 1 : 2;
+    int possibleDelays = interestingDelay == 0 ? 1 : 2;
     State expanded_state = nullptr;
 
     std::vector<State> unvisitedChildStates{};
@@ -160,7 +160,7 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_expand_delays(std::shared_ptr<Ext
             delay = 0;
         } else
         {
-            delay = lower;
+            delay = interestingDelay;
         }
 
         // delay the nodes state, to get the new child node
@@ -255,8 +255,8 @@ std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<Exten
     while (!current_node->isTerminalState) {
 
         if (current_node->children_are_delay_actions) {
-            int lower = current_node->bounds.first;
-            int possibleDelays = lower == 0 ? 1 : 2;
+            int interestingDelay = current_node->bounds.second;
+            int possibleDelays = interestingDelay == 0 ? 1 : 2;
 
             if(current_node->visitedDelays.size() < possibleDelays){
                 return m_expand_delays(current_node);
