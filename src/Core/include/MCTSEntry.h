@@ -28,7 +28,7 @@ class MCTSEntry {
     long states_explored = 0;
 
     int exploreLimitAbs;
-    double exploreLimitPercent;
+    int StepSize;
     int unrolledStatesLimit;
     int bootstrapLimit;
     long count_states(std::shared_ptr<SearchNode> &root);

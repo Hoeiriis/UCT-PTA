@@ -11,7 +11,7 @@ MCTSEntry::MCTSEntry(UppaalEnvironmentInterface &env) : _environment(env) {}
 bool MCTSEntry::run() {
     UCT_PTA uct = UCT_PTA(_environment,unrolledStatesLimit);
 
-    uct.run(time_limit_sec, exploreLimitAbs, exploreLimitPercent, bootstrapLimit);
+    uct.run(time_limit_sec, StepSize, bootstrapLimit);
 
     terminalNodeScores = uct.getBestTerminalNodeScore();
 

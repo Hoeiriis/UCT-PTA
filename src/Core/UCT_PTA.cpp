@@ -23,7 +23,7 @@ UCT_PTA::UCT_PTA(UppaalEnvironmentInterface &environment, int unrolledStatesLimi
             std::bind(&UCT_PTA::m_best_child, this, std::placeholders::_1, std::placeholders::_2); **/
 }
 
-State UCT_PTA::run(int n_searches, int exploreLimitAbs, double exploreLimitPercent, int bootstrapLimit) {
+State UCT_PTA::run(int n_searches, int StepSize, int bootstrapLimit) {
     time_t max_start = time(nullptr);
     long max_time = n_searches;
     long max_timeLeft = max_time;
@@ -35,12 +35,10 @@ State UCT_PTA::run(int n_searches, int exploreLimitAbs, double exploreLimitPerce
 
     bootstrap_reward_scaling(bootstrapLimit);
 
-    std::cerr << "Primariy loop" << std::endl;
-
     while (!best_proved && max_timeLeft > 0) {
         // TreePolicy runs to find an unexpanded node to expand
         std::shared_ptr<ExtendedSearchNode> expandedNode =
-            m_tree_policy(root_node, exploreLimitPercent, exploreLimitAbs);
+            m_tree_policy(root_node);
 
         // From the expanded node, a simulation runs that returns a score
         std::vector<double> sim_scores(1, 0);
@@ -247,8 +245,7 @@ void UCT_PTA::m_backpropagation(const std::shared_ptr<ExtendedSearchNode> &node,
     return _backup.backup(node, score);
 }
 
-std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<ExtendedSearchNode> node,
-                                                           double exploreLimitPercent, int exploreLimitAbs) {
+std::shared_ptr<ExtendedSearchNode> UCT_PTA::m_tree_policy(std::shared_ptr<ExtendedSearchNode> node) {
 
     std::shared_ptr<ExtendedSearchNode> current_node = std::move(node);
 
