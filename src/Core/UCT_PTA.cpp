@@ -30,56 +30,66 @@ State UCT_PTA::run(int n_searches, int StepSize, int bootstrapLimit) {
     long _expanded = 0;
 
     State initial_state = _environment.GetStartState();
-    root_node = ExtendedSearchNode::create_ExtendedSearchNode(nullptr, initial_state, false, true);
-    root_node->bounds = _environment.GetDelayBounds(initial_state);
+    std::shared_ptr<ExtendedSearchNode> current_root = ExtendedSearchNode::create_ExtendedSearchNode(nullptr, initial_state, false, true);
+    current_root->bounds = _environment.GetDelayBounds(initial_state);
+    root_node = current_root;
 
     bootstrap_reward_scaling(bootstrapLimit);
 
     while (!best_proved && max_timeLeft > 0) {
-        // TreePolicy runs to find an unexpanded node to expand
-        std::shared_ptr<ExtendedSearchNode> expandedNode =
-            m_tree_policy(root_node);
 
-        // From the expanded node, a simulation runs that returns a score
-        std::vector<double> sim_scores(1, 0);
-        for (int i = 0; i < sim_scores.size(); ++i) {
-            Reward simulation_score = m_default_policy(expandedNode->state);
-            sim_scores.at(i) = simulation_score;
-        }
-        auto simMinMax = std::minmax_element(std::begin(sim_scores), std::end(sim_scores));
-        // eventually update min max reward
-        if (*simMinMax.first < rewardMinMax.first) {
-            rewardMinMax.first = *simMinMax.first;
-        } else if (*simMinMax.second > rewardMinMax.second) {
-            rewardMinMax.second = *simMinMax.second;
-        }
+        for(int iter = 0; iter < StepSize; iter++)
+        {
+            // TreePolicy runs to find an unexpanded node to expand
+            std::shared_ptr<ExtendedSearchNode> expandedNode =
+                    m_tree_policy(current_root);
 
-        auto avg_score = 0;
-        avg_score = std::accumulate(std::begin(sim_scores), std::end(sim_scores), 0.0) / sim_scores.size();
-
-        // normalize data
-        double norm_score = (avg_score - rewardMinMax.first + DBL_MIN) / (rewardMinMax.second - rewardMinMax.first + DBL_MIN);
-        // The score is backpropagated up through the search tree
-        m_backpropagation(expandedNode, norm_score);
-
-        // if new terminal node is encountered, update the bestTerminalNode
-        if (expandedNode->isTerminalState) {
-            Reward termReward = _environment.EvaluateRewardFunction(expandedNode->state);
-            if (bestTerminalNodesFound.empty() || bestTerminalNodesFound.back().score < termReward) {
-                auto newBestNode = TerminalNodeScore();
-                newBestNode.score = termReward;
-                newBestNode.node = expandedNode;
-                newBestNode.time_to_find = (time(nullptr) - max_start);
-                newBestNode.nodes_expanded = _expanded;
-                // insert at beginning
-                bestTerminalNodesFound.push_back(newBestNode);
+            // From the expanded node, a simulation runs that returns a score
+            std::vector<double> sim_scores(1, 0);
+            for (double & sim_score : sim_scores) {
+                Reward simulation_score = m_default_policy(expandedNode->state);
+                sim_score = simulation_score;
             }
-            expandedNode->score = {-100000, 0};
+            auto simMinMax = std::minmax_element(std::begin(sim_scores), std::end(sim_scores));
+            // eventually update min max reward
+            if (*simMinMax.first < rewardMinMax.first) {
+                rewardMinMax.first = *simMinMax.first;
+            } else if (*simMinMax.second > rewardMinMax.second) {
+                rewardMinMax.second = *simMinMax.second;
+            }
+
+            auto avg_score = 0;
+            avg_score = std::accumulate(std::begin(sim_scores), std::end(sim_scores), 0.0) / sim_scores.size();
+
+            // normalize data
+            double norm_score = (avg_score - rewardMinMax.first + DBL_MIN) / (rewardMinMax.second - rewardMinMax.first + DBL_MIN);
+            // The score is backpropagated up through the search tree
+            m_backpropagation(expandedNode, norm_score);
+
+            // if new terminal node is encountered, update the bestTerminalNode
+            if (expandedNode->isTerminalState) {
+                Reward termReward = _environment.EvaluateRewardFunction(expandedNode->state);
+                if (bestTerminalNodesFound.empty() || bestTerminalNodesFound.back().score < termReward) {
+                    auto newBestNode = TerminalNodeScore();
+                    newBestNode.score = termReward;
+                    newBestNode.node = expandedNode;
+                    newBestNode.time_to_find = (time(nullptr) - max_start);
+                    newBestNode.nodes_expanded = _expanded;
+                    // insert at beginning
+                    bestTerminalNodesFound.push_back(newBestNode);
+                }
+                expandedNode->score = {-100000, 0};
+            }
+            _expanded += 1;
         }
+
+        if(current_root->child_nodes.empty()){
+            break;
+        }
+        current_root = m_best_child(current_root, 0);
 
         // update maxTime
         max_timeLeft = max_time - (time(nullptr) - max_start);
-        _expanded += 1;
     }
 
     if (bestTerminalNodesFound.empty()) {
